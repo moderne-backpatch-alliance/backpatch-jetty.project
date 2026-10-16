@@ -28,6 +28,7 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 
 import org.eclipse.jetty.io.AbstractConnection;
@@ -627,6 +628,21 @@ public class SslConnection extends AbstractConnection
                         // Extra check on unwrapResultStatus == OK with zero length buffer is due
                         // to SSL client on android (see bug #454773)
                         _underFlown = unwrapResultStatus == Status.BUFFER_UNDERFLOW || unwrapResultStatus == Status.OK && unwrapResult.bytesConsumed() == 0 && unwrapResult.bytesProduced() == 0;
+
+                        // Before the net_filled check below: a full buffer fills 0 bytes.
+                        if (unwrapResultStatus == Status.BUFFER_UNDERFLOW)
+                        {
+                            // Continue if we can compact?
+                            if (BufferUtil.compact(_encryptedInput))
+                                break decryption; // to cause fill again.
+
+                            // Are we out of space?
+                            if (BufferUtil.space(_encryptedInput) == 0)
+                            {
+                                BufferUtil.clear(_encryptedInput);
+                                throw new SSLHandshakeException("Encrypted buffer max length exceeded");
+                            }
+                        }
 
                         if (_underFlown)
                         {
