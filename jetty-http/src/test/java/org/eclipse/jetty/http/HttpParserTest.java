@@ -675,6 +675,51 @@ public class HttpParserTest
         }
     }
 
+    private void parseChunked(String chunked, int maxHeaderBytes)
+    {
+        init();
+        ByteBuffer buffer= BufferUtil.toBuffer(
+                "POST /chunk HTTP/1.1\015\012"
+                        + "Host: localhost\015\012"
+                        + "Transfer-Encoding: chunked\015\012"
+                        + "\015\012"
+                        + chunked);
+        HttpParser.RequestHandler<ByteBuffer> handler  = new Handler();
+        HttpParser parser= new HttpParser(handler,maxHeaderBytes);
+        parseAll(parser,buffer);
+    }
+
+    private static String repeat(String s, int times)
+    {
+        StringBuilder b=new StringBuilder();
+        for (int i=0; i<times; i++)
+            b.append(s);
+        return b.toString();
+    }
+
+    @Test
+    public void testChunkExtensionsCountTowardMaxHeaderBytes() throws Exception
+    {
+        parseChunked("1;"+repeat("e",100)+"\r\nX\r\n0\r\n\r\n",256);
+        assertEquals(null,_bad);
+        assertEquals("X",_content);
+        assertTrue(_messageCompleted);
+
+        parseChunked("1;"+repeat("e",400)+"\r\nX\r\n0\r\n\r\n",256);
+        assertEquals("413",_bad);
+        assertFalse(_messageCompleted);
+
+        parseChunked(repeat("1;"+repeat("e",30)+"\r\nX\r\n",10)+"0\r\n\r\n",256);
+        assertEquals("413",_bad);
+        assertFalse(_messageCompleted);
+
+        // the chunk framing itself does not count
+        parseChunked(repeat("1\r\nX\r\n",300)+"1;e\r\nX\r\n0\r\n\r\n",256);
+        assertEquals(null,_bad);
+        assertEquals(301,_content.length());
+        assertTrue(_messageCompleted);
+    }
+
     @Test
     public void testBadChunkExtensions() throws Exception
     {

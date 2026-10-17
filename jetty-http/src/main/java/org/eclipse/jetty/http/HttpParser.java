@@ -401,7 +401,7 @@ public class HttpParser
             {
                 if (buffer.hasRemaining())
                 {
-                    if(_maxHeaderBytes>0 && _state.ordinal()<State.END.ordinal())
+                    if(_maxHeaderBytes>0 && (_state.ordinal()<State.CONTENT.ordinal() || _state==State.CHUNK_PARAMS))
                         _headerBytes++;
                     ch=buffer.get();
                     if (ch!=LINE_FEED)
@@ -1512,6 +1512,12 @@ public class HttpParser
                     ch=nextChunkByte(buffer);
                     if (ch==0)
                         break;
+                    // chunk extensions of the whole message count toward the header size limit
+                    if (_maxHeaderBytes>0 && ++_headerBytes>_maxHeaderBytes)
+                    {
+                        LOG.warn("chunk extensions are too large >"+_maxHeaderBytes);
+                        throw new BadMessageException(HttpStatus.REQUEST_ENTITY_TOO_LARGE_413);
+                    }
                     if (parseChunkExt(ch,buffer))
                     {
                         if (_chunkLength == 0)
