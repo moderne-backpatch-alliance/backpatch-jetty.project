@@ -148,6 +148,7 @@ public class HttpURI
         int i=offset;
         int e=offset+length;
         int state=AUTH;
+        int encodedCharacters=0;
         _end=offset+length;
         _scheme=offset;
         _authority=offset;
@@ -172,11 +173,15 @@ public class HttpURI
                     {
                         case ':':
                         {
+                            if (encodedCharacters>0)
+                                throw new IllegalArgumentException("Bad authority");
                             _port = s;
                             break loop;
                         }
                         case '[':
                         {
+                            if (s!=offset)
+                                throw new IllegalArgumentException("Bad authority");
                             state = IPV6;
                             break;
                         }
@@ -184,6 +189,30 @@ public class HttpURI
                         {
                             // ';' ends the authority in parse2; an authority-form target has nothing after it
                             throw new IllegalArgumentException("Bad authority");
+                        }
+                        case '@':
+                        {
+                            // authority-form has no user info
+                            throw new IllegalArgumentException("Bad authority");
+                        }
+                        case '%':
+                        {
+                            if (encodedCharacters>0)
+                                throw new IllegalArgumentException("Bad authority");
+                            encodedCharacters=2;
+                            break;
+                        }
+                        default:
+                        {
+                            if (encodedCharacters>0)
+                            {
+                                if (!isHexDigit(c))
+                                    throw new IllegalArgumentException("Bad authority");
+                                encodedCharacters--;
+                            }
+                            else if (!isUnreservedOrSubDelim(c))
+                                throw new IllegalArgumentException("Bad authority");
+                            break;
                         }
                     }
                     continue;
@@ -202,6 +231,13 @@ public class HttpURI
                             state = AUTH;
                             break;
                         }
+                        case ':':
+                        case '.':
+                            break;
+                        default:
+                            if (!isHexDigit(c))
+                                throw new IllegalArgumentException("Bad authority");
+                            break;
                     }
 
                     continue;

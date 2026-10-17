@@ -261,4 +261,65 @@ public class HttpURITest
         assertEquals("localhost", uri.getHost());
         assertEquals(443, uri.getPort());
     }
+
+    /* ------------------------------------------------------------ */
+    @Test
+    public void testConnectBadAuthority() throws Exception
+    {
+        String[] bad=
+        {
+            "a@b:443",
+            "user@host:443",
+            "a:b@c:443",
+            "[zz]:443",
+            "[::1%25eth0]:443",
+            "host[::1]:443",
+            "h st:443",
+            "h\000st:443",
+            "host/path:443",
+            "host?q:443",
+            "host#f:443",
+            "h%GGst:443",
+            "host%:443",
+            "host%0:443",
+            "host\u00e9.com:443",
+            "host:44x",
+        };
+        for (String target:bad)
+        {
+            try
+            {
+                HttpURI uri = new HttpURI();
+                uri.parseConnect(target);
+                fail(target+" parsed with host "+uri.getHost()+" port "+uri.getPort());
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+        }
+    }
+
+    /* ------------------------------------------------------------ */
+    @Test
+    public void testConnectGoodAuthority() throws Exception
+    {
+        String[][] good=
+        {
+            {"host:443","host","443"},
+            {"[::1]:443","[::1]","443"},
+            {"192.168.0.1:8080","192.168.0.1","8080"},
+            {"ho%41st:443","ho%41st","443"},
+            {"a-b.c_d~e!$&'()*+,=f:443","a-b.c_d~e!$&'()*+,=f","443"},
+            {"[::ffff:127.0.0.1]:443","[::ffff:127.0.0.1]","443"},
+        };
+        for (String[] test:good)
+        {
+            HttpURI uri = new HttpURI();
+            uri.parseConnect(test[0]);
+            assertEquals(test[0], test[1], uri.getHost());
+            assertEquals(test[0], Integer.parseInt(test[2]), uri.getPort());
+            assertEquals(test[0], test[0], uri.getPath());
+        }
+    }
 }
