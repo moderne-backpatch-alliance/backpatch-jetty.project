@@ -382,6 +382,15 @@ public class HttpURI
                             state = PATH;
                             break;
                         }
+                        case ';':
+                        {
+                            // ends the authority: an empty path with a parameter
+                            _path = s;
+                            _port = _path;
+                            _param = s;
+                            state = PARAM;
+                            break;
+                        }
                         case '@':
                         {
                             _host = i;

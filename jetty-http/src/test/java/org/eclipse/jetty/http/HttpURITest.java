@@ -76,4 +76,29 @@ public class HttpURITest
             assertEquals(test[FRAGMENT], uri.getFragment());
         }
     }
+
+    /* ------------------------------------------------------------ */
+    @Test
+    public void testSemicolonEndsAuthority() throws Exception
+    {
+        String[][] semicolons=
+        {
+            {"http://localhost;/path","http","localhost","-1",null,"/path",null,null},
+            {"http://user@host;p=v/x?q#f","http","host","-1",null,"p=v/x","q","f"},
+            {"http://[::1];/path","http","[::1]","-1",null,"/path",null,null},
+        };
+        for (String[] test:semicolons)
+        {
+            HttpURI uri = new HttpURI(test[INPUT]);
+
+            assertEquals(test[INPUT], test[SCHEME], uri.getScheme());
+            assertEquals(test[INPUT], test[HOST], uri.getHost());
+            assertEquals(test[INPUT], Integer.parseInt(test[PORT]), uri.getPort());
+            assertEquals(test[INPUT], test[PATH], uri.getPath());
+            assertEquals(test[INPUT], test[PARAM], uri.getParam());
+            assertEquals(test[INPUT], test[QUERY], uri.getQuery());
+            assertEquals(test[INPUT], test[FRAGMENT], uri.getFragment());
+        }
+        assertEquals("//localhost", new HttpURI("http://localhost;/path").getAuthority());
+    }
 }
