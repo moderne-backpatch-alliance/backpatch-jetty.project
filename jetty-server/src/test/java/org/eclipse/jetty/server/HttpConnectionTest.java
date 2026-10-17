@@ -113,9 +113,9 @@ public class HttpConnectionTest
                                            "Content-Type: text/plain\n"+
                                            "Connection: close\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "12345\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             offset = checkContains(response,offset,"HTTP/1.1 200");
             offset = checkContains(response,offset,"/R1");
             offset = checkContains(response,offset,"12345");
@@ -127,9 +127,9 @@ public class HttpConnectionTest
                                            "Content-Type: text/plain\n"+
                                            "Connection: close\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "ABCDE\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             offset = checkContains(response,offset,"HTTP/1.1 200");
             offset = checkContains(response,offset,"/R2");
             offset = checkContains(response,offset,"ABCDE");
@@ -290,9 +290,9 @@ public class HttpConnectionTest
             request.append("Content-Type: text/plain\r\n");
             request.append("Connection: close\r\n");
             request.append("\r\n");
-            request.append("8;\r\n"); // chunk header
+            request.append("8\r\n"); // chunk header
             request.append("abcdefgh"); // actual content of 8 bytes
-            request.append("\r\n0;\r\n"); // last chunk
+            request.append("\r\n0\r\n"); // last chunk
     
             String rawResponses = connector.getResponses(request.toString());
             HttpTester.Response response = HttpTester.parseResponse(rawResponses);
@@ -564,9 +564,9 @@ public class HttpConnectionTest
             "Content-Type: text/plain\n"+
             "Connection: close\n"+
             "\015\012"+
-            "5;\015\012"+
+            "5\015\012"+
             "12345\015\012"+
-            "0;\015\012\015\012");
+            "0\015\012\015\012");
         offset = checkContains(response,offset,"HTTP/1.1 200");
         checkNotContained(response,offset,"IgnoreMe");
         offset = checkContains(response,offset,"/R1");
@@ -614,9 +614,9 @@ public class HttpConnectionTest
                                            "Content-Type: text/plain; charset=utf-8\n"+
                                            "Connection: close\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "12345\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             offset = checkContains(response,offset,"HTTP/1.1 200");
             offset = checkContains(response,offset,"/R1");
             offset = checkContains(response,offset,"encoding=UTF-8");
@@ -629,9 +629,9 @@ public class HttpConnectionTest
                                            "Content-Type: text/plain; charset =  iso-8859-1 ; other=value\n"+
                                            "Connection: close\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "12345\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             offset = checkContains(response,offset,"HTTP/1.1 200");
             offset = checkContains(response,offset,"encoding=ISO-8859-1");
             offset = checkContains(response,offset,"/R1");
@@ -644,9 +644,9 @@ public class HttpConnectionTest
                                            "Content-Type: text/plain; charset=unknown\n"+
                                            "Connection: close\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "12345\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             offset = checkContains(response,offset,"HTTP/1.1 200");
             offset = checkContains(response,offset,"encoding=unknown");
             offset = checkContains(response,offset,"/R1");
@@ -676,11 +676,11 @@ public class HttpConnectionTest
         "Transfer-Encoding: chunked\n"+
         "Content-Type: text/plain; charset=utf-8\n"+
         "\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "12345\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "67890\015\012"+
-        "0;\015\012\015\012"+
+        "0\015\012\015\012"+
         "GET /R2 HTTP/1.1\n"+
         "Host: localhost\n"+
         "Content-Type: text/plain; charset=utf-8\n"+
@@ -716,7 +716,7 @@ public class HttpConnectionTest
         "Transfer-Encoding: chunked\n"+
         "Content-Type: text/plain; charset=utf-8\n"+
         "\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "12345\015\012";
 
         long start=System.currentTimeMillis();
@@ -744,11 +744,11 @@ public class HttpConnectionTest
         "Transfer-Encoding: chunked\n"+
         "Content-Type: text/plain; charset=utf-8\n"+
         "\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "12345\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "67890\015\012"+
-        "0;\015\012\015\012"+
+        "0\015\012\015\012"+
         "GET /R2 HTTP/1.1\n"+
         "Host: localhost\n"+
         "Content-Type: text/plain; charset=utf-8\n"+
@@ -780,11 +780,11 @@ public class HttpConnectionTest
         "Transfer-Encoding: chunked\n"+
         "Content-Type: application/data; charset=utf-8\n"+
         "\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "12345\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "67890\015\012"+
-        "0;\015\012\015\012"+
+        "0\015\012\015\012"+
         "GET /R2 HTTP/1.1\n"+
         "Host: localhost\n"+
         "Content-Type: text/plain; charset=utf-8\n"+
@@ -815,11 +815,11 @@ public class HttpConnectionTest
         "Transfer-Encoding: chunked\n"+
         "Content-Type: text/plain; charset=utf-8\n"+
         "\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "12345\015\012"+
-        "5;\015\012"+
+        "5\015\012"+
         "67890\015\012"+
-        "0;\015\012\015\012"+
+        "0\015\012\015\012"+
         "GET /R2 HTTP/1.1\n"+
         "Host: localhost\n"+
         "Content-Type: text/plain; charset=utf-8\n"+
@@ -858,9 +858,9 @@ public class HttpConnectionTest
                                            "Transfer-Encoding: chunked\n"+
                                            "Content-Type: text/plain; charset=utf-8\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "12345\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             checkContains(response,offset,"Connection: close");
         }
         catch (Exception e)
@@ -993,9 +993,9 @@ public class HttpConnectionTest
                                            "Content-Type: text/plain; charset=utf-8\n"+
                                            "Connection: close\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "12345\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             offset = checkContains(response,offset,"HTTP/1.1 200");
 
             offset=0;
@@ -1005,9 +1005,9 @@ public class HttpConnectionTest
                                            "Content-Type: text/plain; charset=utf-8\n"+
                                            "Connection: close\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "12345\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             offset = checkContains(response,offset,"HTTP/1.1 400");
 
             offset=0;
@@ -1017,9 +1017,9 @@ public class HttpConnectionTest
                                            "Content-Type: text/plain; charset=utf-8\n"+
                                            "Connection: close\n"+
                                            "\015\012"+
-                                           "5;\015\012"+
+                                           "5\015\012"+
                                            "12345\015\012"+
-                                           "0;\015\012\015\012");
+                                           "0\015\012\015\012");
             offset = checkContains(response,offset,"HTTP/1.1 400 Bad Request");
         }
         catch (Exception e)

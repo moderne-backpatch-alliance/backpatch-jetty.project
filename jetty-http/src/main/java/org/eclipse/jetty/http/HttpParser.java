@@ -84,6 +84,16 @@ public class HttpParser
     public final static int INITIAL_URI_LENGTH=256;
     private final static int MAX_CHUNK_LENGTH=Integer.MAX_VALUE/16-16;
 
+    // chunk-ext states (RFC 9112 7.1.1) within CHUNK_PARAMS
+    private final static int EXT_BWS=0;
+    private final static int EXT_NAME_BWS_BEFORE=1;
+    private final static int EXT_NAME=2;
+    private final static int EXT_NAME_BWS_AFTER=3;
+    private final static int EXT_VALUE_BWS_BEFORE=4;
+    private final static int EXT_VALUE_OPEN_QUOTE=5;
+    private final static int EXT_VALUE=6;
+    private final static int EXT_VALUE_CLOSE_QUOTE=7;
+
     /**
      * Cache of common {@link HttpField}s including: <UL>
      * <LI>Common static combinations such as:<UL>
@@ -155,6 +165,9 @@ public class HttpParser
     private long _contentPosition;
     private int _chunkLength;
     private int _chunkPosition;
+    private int _chunkExtState;
+    private boolean _chunkExtEscape;
+    private boolean _chunkDataEnd;
     private boolean _headResponse;
     private boolean _cr;
     private ByteBuffer _contentChunk;
@@ -1446,13 +1459,18 @@ public class HttpParser
                 case CHUNKED_CONTENT:
                 {
                     ch=next(buffer);
-                    if (ch>HttpTokens.SPACE)
+                    if (ch==0)
+                        break;
+                    if (ch==HttpTokens.LINE_FEED)
                     {
-                        _chunkLength=TypeUtil.convertHexDigit(ch);
-                        _chunkPosition=0;
-                        setState(State.CHUNK_SIZE);
+                        _chunkDataEnd=false;
+                        break;
                     }
-
+                    if (_chunkDataEnd || !isHexDigit(ch))
+                        throw new IllegalCharacterException(_state,ch,buffer);
+                    _chunkLength=TypeUtil.convertHexDigit(ch);
+                    _chunkPosition=0;
+                    setState(State.CHUNK_SIZE);
                     break;
                 }
 
@@ -1468,23 +1486,33 @@ public class HttpParser
                         else
                             setState(State.CHUNK);
                     }
-                    else if (ch <= HttpTokens.SPACE || ch == HttpTokens.SEMI_COLON)
+                    else if (ch == HttpTokens.SPACE || ch == HttpTokens.TAB)
                     {
+                        _chunkExtState=EXT_BWS;
                         setState(State.CHUNK_PARAMS);
                     }
-                    else
+                    else if (ch == HttpTokens.SEMI_COLON)
+                    {
+                        _chunkExtState=EXT_NAME_BWS_BEFORE;
+                        setState(State.CHUNK_PARAMS);
+                    }
+                    else if (isHexDigit(ch))
                     {
                         if (_chunkLength>MAX_CHUNK_LENGTH)
                             throw new BadMessageException(HttpStatus.REQUEST_ENTITY_TOO_LARGE_413);
                         _chunkLength=_chunkLength * 16 + TypeUtil.convertHexDigit(ch);
                     }
+                    else
+                        throw new IllegalCharacterException(_state,ch,buffer);
                     break;
                 }
 
                 case CHUNK_PARAMS:
                 {
                     ch=next(buffer);
-                    if (ch == HttpTokens.LINE_FEED)
+                    if (ch==0)
+                        break;
+                    if (parseChunkExt(ch,buffer))
                     {
                         if (_chunkLength == 0)
                             setState(State.CHUNK_END);
@@ -1499,6 +1527,7 @@ public class HttpParser
                     int chunk=_chunkLength - _chunkPosition;
                     if (chunk == 0)
                     {
+                        _chunkDataEnd=true;
                         setState(State.CHUNKED_CONTENT);
                     }
                     else
@@ -1549,6 +1578,130 @@ public class HttpParser
     }
 
     /* ------------------------------------------------------------------------------- */
+    /**
+     * @return true when the chunk-ext ended with its line terminator
+     */
+    private boolean parseChunkExt(byte ch, ByteBuffer buffer)
+    {
+        boolean eol=ch==HttpTokens.LINE_FEED;
+        boolean bws=ch==HttpTokens.SPACE || ch==HttpTokens.TAB;
+        switch (_chunkExtState)
+        {
+            case EXT_BWS:
+                if (ch==HttpTokens.SEMI_COLON)
+                    _chunkExtState=EXT_NAME_BWS_BEFORE;
+                else if (!bws)
+                    throw new IllegalCharacterException(_state,ch,buffer);
+                return false;
+
+            case EXT_NAME_BWS_BEFORE:
+                if (isTchar(ch))
+                    _chunkExtState=EXT_NAME;
+                else if (!bws)
+                    throw new IllegalCharacterException(_state,ch,buffer);
+                return false;
+
+            case EXT_NAME:
+                if (eol)
+                    return true;
+                if (ch==HttpTokens.SEMI_COLON)
+                    _chunkExtState=EXT_NAME_BWS_BEFORE;
+                else if (bws)
+                    _chunkExtState=EXT_NAME_BWS_AFTER;
+                else if (ch=='=')
+                    _chunkExtState=EXT_VALUE_BWS_BEFORE;
+                else if (!isTchar(ch))
+                    throw new IllegalCharacterException(_state,ch,buffer);
+                return false;
+
+            case EXT_NAME_BWS_AFTER:
+                if (ch==HttpTokens.SEMI_COLON)
+                    _chunkExtState=EXT_NAME_BWS_BEFORE;
+                else if (ch=='=')
+                    _chunkExtState=EXT_VALUE_BWS_BEFORE;
+                else if (!bws)
+                    throw new IllegalCharacterException(_state,ch,buffer);
+                return false;
+
+            case EXT_VALUE_BWS_BEFORE:
+                if (ch=='"')
+                {
+                    _chunkExtEscape=false;
+                    _chunkExtState=EXT_VALUE_OPEN_QUOTE;
+                }
+                else if (isTchar(ch))
+                    _chunkExtState=EXT_VALUE;
+                else if (!bws)
+                    throw new IllegalCharacterException(_state,ch,buffer);
+                return false;
+
+            case EXT_VALUE_OPEN_QUOTE:
+            {
+                // quoted-string (RFC 9110 5.6.4): CR and LF are neither qdtext nor quoted-pair
+                int c=0xff&ch;
+                if (_chunkExtEscape)
+                {
+                    if (!(bws || c>=0x21 && c!=0x7F))
+                        throw new IllegalCharacterException(_state,ch,buffer);
+                    _chunkExtEscape=false;
+                }
+                else if (c=='\\')
+                    _chunkExtEscape=true;
+                else if (c=='"')
+                    _chunkExtState=EXT_VALUE_CLOSE_QUOTE;
+                else if (!(bws || c==0x21 || c>=0x23 && c<=0x5B || c>=0x5D && c<=0x7E || c>=0x80))
+                    throw new IllegalCharacterException(_state,ch,buffer);
+                return false;
+            }
+
+            case EXT_VALUE:
+                if (eol)
+                    return true;
+                if (bws)
+                    _chunkExtState=EXT_BWS;
+                else if (ch==HttpTokens.SEMI_COLON)
+                    _chunkExtState=EXT_NAME_BWS_BEFORE;
+                else if (!isTchar(ch))
+                    throw new IllegalCharacterException(_state,ch,buffer);
+                return false;
+
+            case EXT_VALUE_CLOSE_QUOTE:
+                if (eol)
+                    return true;
+                if (bws)
+                    _chunkExtState=EXT_BWS;
+                else if (ch==HttpTokens.SEMI_COLON)
+                    _chunkExtState=EXT_NAME_BWS_BEFORE;
+                else
+                    throw new IllegalCharacterException(_state,ch,buffer);
+                return false;
+
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
+    private static boolean isHexDigit(byte ch)
+    {
+        return ch>='0' && ch<='9' || ch>='a' && ch<='f' || ch>='A' && ch<='F';
+    }
+
+    /* tchar (RFC 9110 5.6.2) */
+    private static boolean isTchar(byte ch)
+    {
+        if (ch>='0' && ch<='9' || ch>='a' && ch<='z' || ch>='A' && ch<='Z')
+            return true;
+        switch (ch)
+        {
+            case '!': case '#': case '$': case '%': case '&': case '\'': case '*':
+            case '+': case '-': case '.': case '^': case '_': case '`': case '|': case '~':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /* ------------------------------------------------------------------------------- */
     public boolean isAtEOF()
  
     {
@@ -1595,6 +1748,7 @@ public class HttpParser
         _contentChunk=null;
         _headerBytes=0;
         _host=false;
+        _chunkDataEnd=false;
     }
 
     /* ------------------------------------------------------------------------------- */
