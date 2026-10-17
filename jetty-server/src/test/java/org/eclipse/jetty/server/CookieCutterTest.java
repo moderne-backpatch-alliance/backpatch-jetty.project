@@ -46,7 +46,7 @@ public class CookieCutterTest
         Assert.assertEquals("", parse("A=\"1; B=2; C=3"));
         Assert.assertEquals("", parse("DISPLAY_LANGUAGE=\"b; JSESSIONID=1337; c=d\""));
         Assert.assertEquals("c=d", parse("DISPLAY_LANGUAGE=\"b; JSESSIONID=1337\"; c=d"));
-        Assert.assertEquals("B=2", parse("A=\"1\; X=9\"; B=2"));
+        Assert.assertEquals("B=2", parse("A=\"1\\; X=9\"; B=2"));
         Assert.assertEquals("name=value", parse("name=value; other=\"quoted=;value\""));
     }
 
