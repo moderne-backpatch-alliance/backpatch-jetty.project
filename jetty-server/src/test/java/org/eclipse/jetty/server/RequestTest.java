@@ -1026,23 +1026,36 @@ public class RequestTest
                 "\n"
         );
         assertTrue(response.startsWith("HTTP/1.1 200 OK"));
+        assertEquals(1,cookies.size());
+        assertEquals("name", cookies.get(0).getName());
+        assertEquals("value", cookies.get(0).getValue());
+
+        cookies.clear();
+        response=_connector.getResponses(
+                "GET / HTTP/1.1\n"+
+                "Host: whatever\n"+
+                "Cookie: name=value; other=\"quoted=value\"\n" +
+                "Connection: close\n"+
+                "\n"
+        );
+        assertTrue(response.startsWith("HTTP/1.1 200 OK"));
         assertEquals(2,cookies.size());
         assertEquals("name", cookies.get(0).getName());
         assertEquals("value", cookies.get(0).getValue());
         assertEquals("other", cookies.get(1).getName());
-        assertEquals("quoted=;value", cookies.get(1).getValue());
+        assertEquals("quoted=value", cookies.get(1).getValue());
 
         cookies.clear();
         response=_connector.getResponses(
                 "GET /other HTTP/1.1\n"+
                 "Host: whatever\n"+
                 "Other: header\n"+
-                "Cookie: name=value; other=\"quoted=;value\"\n" +
+                "Cookie: name=value; other=\"quoted=value\"\n" +
                 "\n"+
                 "GET /other HTTP/1.1\n"+
                 "Host: whatever\n"+
                 "Other: header\n"+
-                "Cookie: name=value; other=\"quoted=;value\"\n" +
+                "Cookie: name=value; other=\"quoted=value\"\n" +
                 "Connection: close\n"+
                 "\n"
         );
@@ -1052,7 +1065,7 @@ public class RequestTest
         assertEquals("name", cookies.get(0).getName());
         assertEquals("value", cookies.get(0).getValue());
         assertEquals("other", cookies.get(1).getName());
-        assertEquals("quoted=;value", cookies.get(1).getValue());
+        assertEquals("quoted=value", cookies.get(1).getValue());
 
         assertSame(cookies.get(0), cookies.get(2));
         assertSame(cookies.get(1), cookies.get(3));
@@ -1062,7 +1075,7 @@ public class RequestTest
                 "GET /other HTTP/1.1\n"+
                 "Host: whatever\n"+
                 "Other: header\n"+
-                "Cookie: name=value; other=\"quoted=;value\"\n" +
+                "Cookie: name=value; other=\"quoted=value\"\n" +
                 "\n"+
                 "GET /other HTTP/1.1\n"+
                 "Host: whatever\n"+
@@ -1077,7 +1090,7 @@ public class RequestTest
         assertEquals("name", cookies.get(0).getName());
         assertEquals("value", cookies.get(0).getValue());
         assertEquals("other", cookies.get(1).getName());
-        assertEquals("quoted=;value", cookies.get(1).getValue());
+        assertEquals("quoted=value", cookies.get(1).getValue());
 
         assertNotSame(cookies.get(0), cookies.get(2));
         assertNotSame(cookies.get(1), cookies.get(3));

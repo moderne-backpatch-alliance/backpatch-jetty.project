@@ -128,6 +128,7 @@ public class CookieCutter
             boolean invalue=false;
             boolean quoted=false;
             boolean escaped=false;
+            boolean reject=false;
             int tokenstart=-1;
             int tokenend=-1;
             for (int i = 0, length = hdr.length(), last=length-1; i < length; i++)
@@ -137,6 +138,14 @@ public class CookieCutter
                 // Handle quoted values for name or value
                 if (quoted)
                 {
+                    // RFC6265 cookie-octet excludes ';', even quoted or escaped: such a cookie is dropped
+                    if (c==';')
+                    {
+                        reject=true;
+                        escaped=false;
+                        continue;
+                    }
+
                     if (escaped)
                     {
                         escaped=false;
@@ -272,7 +281,13 @@ public class CookieCutter
                 }
 
                 // If after processing the current character we have a value and a name, then it is a cookie
-                if (value!=null && name!=null)
+                if (value!=null && name!=null && reject)
+                {
+                    reject=false;
+                    name = null;
+                    value = null;
+                }
+                else if (value!=null && name!=null)
                 {
                     name=QuotedStringTokenizer.unquoteOnly(name);
                     value=QuotedStringTokenizer.unquoteOnly(value);
