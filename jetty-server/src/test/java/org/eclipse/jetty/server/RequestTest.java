@@ -274,6 +274,111 @@ public class RequestTest
         assertTrue(responses.startsWith("HTTP/1.1 200"));
     }
     
+    private String multiPartFormLimits(ContextHandler contextHandler, String multipart) throws Exception
+    {
+        final File testTmpDir = File.createTempFile("mplimittest", null);
+        if (testTmpDir.exists())
+            testTmpDir.delete();
+        testTmpDir.mkdir();
+        testTmpDir.deleteOnExit();
+
+        contextHandler.setContextPath("/foo");
+        contextHandler.setResourceBase(".");
+        contextHandler.setHandler(new AbstractHandler()
+        {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
+            {
+                baseRequest.setHandled(true);
+                request.setAttribute(Request.__MULTIPART_CONFIG_ELEMENT, new MultipartConfigElement(testTmpDir.getAbsolutePath(), -1, -1, 2));
+                try
+                {
+                    String field0 = request.getParameter("field0");
+                    int parts = request.getParts().size();
+                    response.setStatus(200);
+                    response.getWriter().print("parts=" + parts + " field0=" + field0.length());
+                }
+                catch (IllegalStateException e)
+                {
+                    response.setStatus(400);
+                    response.getWriter().print(e.getMessage());
+                }
+            }
+        });
+        contextHandler.addEventListener(new Request.MultiPartCleanerListener());
+        _server.stop();
+        _server.setHandler(contextHandler);
+        _server.start();
+
+        String request="POST /foo/x.html HTTP/1.1\r\n"+
+        "Host: whatever\r\n"+
+        "Content-Type: multipart/form-data; boundary=\"AaB03x\"\r\n"+
+        "Content-Length: "+multipart.getBytes().length+"\r\n"+
+        "Connection: close\r\n"+
+        "\r\n"+
+        multipart;
+        return _connector.getResponses(request);
+    }
+
+    private static String multiPartFields(int count, int size)
+    {
+        char[] value = new char[size];
+        Arrays.fill(value, 'x');
+        StringBuilder multipart = new StringBuilder();
+        for (int i = 0; i < count; i++)
+        {
+            multipart.append("--AaB03x\r\n")
+                .append("content-disposition: form-data; name=\"field").append(i).append("\"\r\n")
+                .append("\r\n")
+                .append(value).append("\r\n");
+        }
+        multipart.append("--AaB03x--\r\n");
+        return multipart.toString();
+    }
+
+    @Test
+    public void testMultiPartFormContentSize() throws Exception
+    {
+        ContextHandler contextHandler = new ContextHandler();
+        contextHandler.setMaxFormContentSize(1000);
+        String responses = multiPartFormLimits(contextHandler, multiPartFields(2, 500));
+        assertThat(responses, startsWith("HTTP/1.1 200"));
+        assertThat(responses, containsString("parts=2 field0=500"));
+
+        contextHandler = new ContextHandler();
+        contextHandler.setMaxFormContentSize(1000);
+        responses = multiPartFormLimits(contextHandler, multiPartFields(2, 501));
+        assertThat(responses, startsWith("HTTP/1.1 400"));
+        assertThat(responses, containsString("Form is larger than max length 1000"));
+    }
+
+    @Test
+    public void testMultiPartDefaultFormContentSize() throws Exception
+    {
+        String responses = multiPartFormLimits(new ContextHandler(), multiPartFields(1, 200000));
+        assertThat(responses, startsWith("HTTP/1.1 200"));
+
+        responses = multiPartFormLimits(new ContextHandler(), multiPartFields(1, 200001));
+        assertThat(responses, startsWith("HTTP/1.1 400"));
+        assertThat(responses, containsString("Form is larger than max length 200000"));
+    }
+
+    @Test
+    public void testMultiPartFormKeys() throws Exception
+    {
+        ContextHandler contextHandler = new ContextHandler();
+        contextHandler.setMaxFormKeys(2);
+        String responses = multiPartFormLimits(contextHandler, multiPartFields(2, 1));
+        assertThat(responses, startsWith("HTTP/1.1 200"));
+        assertThat(responses, containsString("parts=2"));
+
+        contextHandler = new ContextHandler();
+        contextHandler.setMaxFormKeys(2);
+        responses = multiPartFormLimits(contextHandler, multiPartFields(3, 1));
+        assertThat(responses, startsWith("HTTP/1.1 400"));
+        assertThat(responses, containsString("Form with too many parts [3 > 2]"));
+    }
+
     @Test
     public void testBadMultiPart() throws Exception
     {        

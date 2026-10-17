@@ -844,6 +844,43 @@ public class MultiPartInputStreamTest
 
 
     
+    private static String createMultipartFields(int count)
+    {
+        StringBuilder body = new StringBuilder();
+        for (int i = 0; i < count; i++)
+        {
+            body.append("--AaB03x\r\n")
+                .append("content-disposition: form-data; name=\"field").append(i).append("\"\r\n")
+                .append("\r\n")
+                .append("value").append(i).append("\r\n");
+        }
+        body.append("--AaB03x--\r\n");
+        return body.toString();
+    }
+
+    private int countParts(String body) throws Exception
+    {
+        MultipartConfigElement config = new MultipartConfigElement(_dirname, -1, -1, 1024);
+        MultiPartInputStreamParser mpis = new MultiPartInputStreamParser(new ByteArrayInputStream(body.getBytes()), _contentType, config, _tmpDir);
+        mpis.setDeleteOnExit(true);
+        return mpis.getParts().size();
+    }
+
+    @Test
+    public void testDefaultMaxParts() throws Exception
+    {
+        assertEquals(1000, countParts(createMultipartFields(1000)));
+        try
+        {
+            countParts(createMultipartFields(1001));
+            fail("expected too many parts");
+        }
+        catch (IllegalStateException e)
+        {
+            assertThat(e.getMessage(), is("Form with too many parts [1001 > 1000]"));
+        }
+    }
+
     private String createMultipartRequestString(String filename)
     {
         int length = filename.length();
