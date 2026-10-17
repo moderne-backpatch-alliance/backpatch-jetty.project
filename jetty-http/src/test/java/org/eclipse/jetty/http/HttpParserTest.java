@@ -1253,6 +1253,47 @@ public class HttpParserTest
     }
     
     @Test
+    public void testBadContentLengths() throws Exception
+    {
+        String[] contentLengths = {"abc","1.5","9999999999999999999999999999999999999999999999","-10","+10","1.0","1,0","10,","9223372036854775808"};
+        for (String contentLength : contentLengths)
+        {
+            init();
+            ByteBuffer buffer= BufferUtil.toBuffer(
+                    "GET /test HTTP/1.1\015\012"
+                            + "Host: localhost\015\012"
+                            + "Content-Length: "+contentLength+"\015\012"
+                            + "\015\012"
+                            + "1234567890\015\012");
+
+            HttpParser.RequestHandler<ByteBuffer> handler  = new Handler();
+            HttpParser parser= new HttpParser(handler);
+
+            parser.parseNext(buffer);
+            assertEquals(contentLength,"Bad Content-Length",_bad);
+            assertFalse(contentLength,buffer.hasRemaining());
+            assertEquals(contentLength,HttpParser.State.CLOSED,parser.getState());
+        }
+    }
+
+    @Test
+    public void testContentLengthMaxValue() throws Exception
+    {
+        ByteBuffer buffer= BufferUtil.toBuffer(
+                "GET /test HTTP/1.1\015\012"
+                        + "Host: localhost\015\012"
+                        + "Content-Length: 9223372036854775807\015\012"
+                        + "\015\012");
+
+        HttpParser.RequestHandler<ByteBuffer> handler  = new Handler();
+        HttpParser parser= new HttpParser(handler);
+
+        parser.parseNext(buffer);
+        assertEquals(null,_bad);
+        assertEquals(Long.MAX_VALUE,parser.getContentLength());
+    }
+
+    @Test
     public void testHost() throws Exception
     {
         ByteBuffer buffer= BufferUtil.toBuffer(
