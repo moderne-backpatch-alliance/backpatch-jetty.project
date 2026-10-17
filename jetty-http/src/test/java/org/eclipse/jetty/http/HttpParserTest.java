@@ -707,6 +707,54 @@ public class HttpParserTest
     }
 
     @Test
+    public void testChunkLinesNeedCRLF() throws Exception
+    {
+        String[] rejected = {
+            "1\nX\r\n0\r\n\r\n",
+            "1;ext\nX\r\n0\r\n\r\n",
+            "1;ext=v\nX\r\n0\r\n\r\n",
+            "1;ext=\"v\"\nX\r\n0\r\n\r\n",
+            "1\r\nX\n0\r\n\r\n",
+            "1\r\nX\r\n0\n\r\n",
+            "1\r\nX\r\n0\r\n\n",
+            "\n1\r\nX\r\n0\r\n\r\n",
+        };
+        for (String chunked : rejected)
+        {
+            parseChunked(chunked);
+            assertThat(chunked,_bad,Matchers.notNullValue());
+            assertFalse(chunked,_messageCompleted);
+        }
+
+        parseChunked("1\r\nX\r\n0\r\n\r\n");
+        assertEquals(null,_bad);
+        assertEquals("X",_content);
+        assertTrue(_messageCompleted);
+    }
+
+    @Test
+    public void testChunkCRLFSplitAcrossBuffers() throws Exception
+    {
+        String request="POST /chunk HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n"
+                + "1;a=b\r\nX\r\n0\r\n\r\n";
+        for (int split=request.indexOf("\r\n\r\n")+5; split<request.length(); split++)
+        {
+            if (request.charAt(split-1)!='\r')
+                continue;
+            init();
+            HttpParser.RequestHandler<ByteBuffer> handler  = new Handler();
+            HttpParser parser= new HttpParser(handler);
+            parser.parseNext(BufferUtil.toBuffer(request.substring(0,split)));
+            ByteBuffer rest=BufferUtil.toBuffer(request.substring(split));
+            for (int n=0; n<100 && rest.hasRemaining() && !_messageCompleted && _bad==null; n++)
+                parser.parseNext(rest);
+            assertEquals("split "+split,null,_bad);
+            assertEquals("split "+split,"X",_content);
+            assertTrue("split "+split,_messageCompleted);
+        }
+    }
+
+    @Test
     public void testStartEOF() throws Exception
     {
         HttpParser.RequestHandler<ByteBuffer> handler  = new Handler();

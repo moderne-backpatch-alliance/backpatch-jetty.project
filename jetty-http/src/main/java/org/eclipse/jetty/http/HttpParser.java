@@ -1458,7 +1458,7 @@ public class HttpParser
 
                 case CHUNKED_CONTENT:
                 {
-                    ch=next(buffer);
+                    ch=nextChunkByte(buffer);
                     if (ch==0)
                         break;
                     if (ch==HttpTokens.LINE_FEED)
@@ -1476,7 +1476,7 @@ public class HttpParser
 
                 case CHUNK_SIZE:
                 {
-                    ch=next(buffer);
+                    ch=nextChunkByte(buffer);
                     if (ch==0)
                         break;
                     if (ch == HttpTokens.LINE_FEED)
@@ -1509,7 +1509,7 @@ public class HttpParser
 
                 case CHUNK_PARAMS:
                 {
-                    ch=next(buffer);
+                    ch=nextChunkByte(buffer);
                     if (ch==0)
                         break;
                     if (parseChunkExt(ch,buffer))
@@ -1550,7 +1550,7 @@ public class HttpParser
                 case CHUNK_END:
                 {
                     // TODO handle chunk trailer
-                    ch=next(buffer);
+                    ch=nextChunkByte(buffer);
                     if (ch==0)
                         break;
                     if (ch == HttpTokens.LINE_FEED)
@@ -1575,6 +1575,15 @@ public class HttpParser
             remaining=buffer.remaining();
         }
         return false;
+    }
+
+    /* ------------------------------------------------------------------------------- */
+    /* chunk framing lines end in CRLF (RFC 9112 7.1); unlike the header section, a bare LF is not accepted */
+    private byte nextChunkByte(ByteBuffer buffer)
+    {
+        if (!_cr && buffer.get(buffer.position())==HttpTokens.LINE_FEED)
+            throw new BadMessageException("Bad EOL");
+        return next(buffer);
     }
 
     /* ------------------------------------------------------------------------------- */
