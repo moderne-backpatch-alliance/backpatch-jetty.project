@@ -534,7 +534,13 @@ public class HttpChannel<T> implements HttpParser.RequestHandler<T>, Runnable, H
         if (httpMethod == HttpMethod.CONNECT)
             _uri.parseConnect(uri.array(),uri.arrayOffset()+uri.position(),uri.remaining());
         else
+        {
             _uri.parse(uri.array(),uri.arrayOffset()+uri.position(),uri.remaining());
+            // HttpURI accepts user info (clients, encodeURL); only a request target rejects it
+            String authority=_uri.getAuthority();
+            if (authority!=null && authority.indexOf('@')>=0)
+                throw new IllegalArgumentException("User info in Authority");
+        }
         _request.setUri(_uri);
 
         String path;

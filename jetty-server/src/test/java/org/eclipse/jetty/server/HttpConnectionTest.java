@@ -497,6 +497,46 @@ public class HttpConnectionTest
     }
 
     @Test
+    public void testAbsoluteFormWithUserInfoIsBadRequest() throws Exception
+    {
+        String[] targets = {
+            "http://user@localhost/",
+            "http://user@localhost",
+            "http://user@localhost:80/path?query",
+            "https://@localhost/",
+            "http://us%40er@localhost/",
+            "http://user:password@localhost/",
+            "http://user@[::1]:80/"
+        };
+        for (String target : targets)
+        {
+            String response=connector.getResponses("GET "+target+" HTTP/1.1\n"+
+                "Host: localhost\n"+
+                "Connection: close\n"+
+                "\n");
+            assertThat(target,response,containsString("HTTP/1.1 400"));
+        }
+    }
+
+    @Test
+    public void testAbsoluteFormWithAtOutsideAuthorityIsAccepted() throws Exception
+    {
+        String[] targets = {
+            "http://localhost/a@b",
+            "http://localhost:80/path?q=a@b",
+            "http://localhost/path;p=a@b"
+        };
+        for (String target : targets)
+        {
+            String response=connector.getResponses("GET "+target+" HTTP/1.1\n"+
+                "Host: localhost\n"+
+                "Connection: close\n"+
+                "\n");
+            assertThat(target,response,containsString("HTTP/1.1 200"));
+        }
+    }
+
+    @Test
     public void testNoHost()
         throws Exception
     {
