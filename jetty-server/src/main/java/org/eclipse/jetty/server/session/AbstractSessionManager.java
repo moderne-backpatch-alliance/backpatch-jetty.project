@@ -685,7 +685,16 @@ public abstract class AbstractSessionManager extends ContainerLifeCycle implemen
             {
                 HttpSessionEvent event=new HttpSessionEvent(session);
                 for (HttpSessionListener listener : _sessionListeners)
-                    listener.sessionCreated(event);
+                {
+                    try
+                    {
+                        listener.sessionCreated(event);
+                    }
+                    catch (Throwable t)
+                    {
+                        __log.warn("Error during Session created listener", t);
+                    }
+                }
             }
         }
     }
@@ -771,7 +780,14 @@ public abstract class AbstractSessionManager extends ContainerLifeCycle implemen
                 HttpSessionEvent event=new HttpSessionEvent(session);      
                 for (int i = _sessionListeners.size()-1; i>=0; i--)
                 {
-                    _sessionListeners.get(i).sessionDestroyed(event);
+                    try
+                    {
+                        _sessionListeners.get(i).sessionDestroyed(event);
+                    }
+                    catch(Throwable t)
+                    {
+                        __log.warn("Error during Session destroy listener", t);
+                    }
                 }
             }
         }
