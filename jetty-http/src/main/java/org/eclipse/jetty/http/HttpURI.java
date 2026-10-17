@@ -60,7 +60,8 @@ public class HttpURI
     PATH=7,
     PARAM=8,
     QUERY=9,
-    ASTERISK=10;
+    ASTERISK=10,
+    FRAGMENT=11;
 
     final Charset _charset;
     boolean _partial=false;
@@ -220,6 +221,7 @@ public class HttpURI
         int state=START;
         int m=offset;
         boolean user=false;
+        boolean afterIPv6=false;
         int encodedCharacters=0;
         _end=offset+length;
         _scheme=offset;
@@ -264,6 +266,8 @@ public class HttpURI
                             _path=s;
                             state=ASTERISK;
                             break;
+                        case ':':
+                            throw new IllegalArgumentException("Bad scheme");
 
                         default:
                             state=SCHEME_OR_PATH;
@@ -324,6 +328,7 @@ public class HttpURI
                     {
                         case ':':
                         {
+                            validateScheme(offset,s);
                             m = i++;
                             _authority = m;
                             _path = m;
@@ -373,6 +378,9 @@ public class HttpURI
 
                 case AUTH:
                 {
+                    // after an IP-literal only a port or the end of the authority may follow
+                    if (afterIPv6 && c!=':' && c!='/' && c!=';' && c!='?' && c!='#')
+                        throw new IllegalArgumentException("Bad authority");
                     switch (c)
                     {
 
@@ -387,14 +395,28 @@ public class HttpURI
                             break;
                         }
                         case ';':
+                        case '?':
+                        case '#':
                         {
-                            if (encodedCharacters>0)
+                            if (encodedCharacters>0 || s==_host)
                                 throw new IllegalArgumentException("Bad authority");
-                            // ends the authority: an empty path with a parameter
+                            // ends the authority: an empty path, then the parameter, query or fragment
                             _path = s;
                             _port = _path;
                             _param = s;
-                            state = PARAM;
+                            if (c==';')
+                                state = PARAM;
+                            else
+                            {
+                                _query = s;
+                                if (c=='?')
+                                    state = QUERY;
+                                else
+                                {
+                                    _fragment = s;
+                                    state = FRAGMENT;
+                                }
+                            }
                             break;
                         }
                         case '@':
@@ -453,6 +475,9 @@ public class HttpURI
                         }
                         case ']':
                         {
+                            if (!isIPv6Address(_raw,_host+1,s))
+                                throw new IllegalArgumentException("Bad IPv6 address");
+                            afterIPv6 = true;
                             state = AUTH;
                             break;
                         }
@@ -547,6 +572,9 @@ public class HttpURI
                 {
                     throw new IllegalArgumentException("only '*'");
                 }
+
+                case FRAGMENT:
+                    continue;
             }
         }
 
@@ -555,6 +583,87 @@ public class HttpURI
 
         if (_port<_path)
             _portValue=TypeUtil.parseInt(_raw, _port+1, _path-_port-1,10);
+    }
+
+    /* scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) (RFC 3986 3.1) */
+    private void validateScheme(int start, int end)
+    {
+        if (end<=start)
+            throw new IllegalArgumentException("Bad scheme");
+        for (int i=start; i<end; i++)
+        {
+            char c=(char)(0xff&_raw[i]);
+            if (!(c>='a' && c<='z' || c>='A' && c<='Z' || i>start && (c>='0' && c<='9' || c=='+' || c=='-' || c=='.')))
+                throw new IllegalArgumentException("Bad scheme");
+        }
+    }
+
+    /* IPv6address of RFC 3986 3.2.2, without the brackets */
+    private static boolean isIPv6Address(byte[] raw, int start, int end)
+    {
+        int groups=0;
+        boolean elided=false;
+        int i=start;
+        if (i<end && raw[i]==':')
+        {
+            if (i+1>=end || raw[i+1]!=':')
+                return false;
+            elided=true;
+            i+=2;
+        }
+        while (i<end)
+        {
+            int j=i;
+            while (j<end && isHexDigit((char)(0xff&raw[j])))
+                j++;
+            if (j<end && raw[j]=='.')
+            {
+                if (!isIPv4Address(raw,i,end))
+                    return false;
+                groups+=2;
+                break;
+            }
+            if (j==i || j-i>4)
+                return false;
+            groups++;
+            if (j==end)
+                break;
+            if (raw[j]!=':' || ++j==end)
+                return false;
+            if (raw[j]==':')
+            {
+                if (elided)
+                    return false;
+                elided=true;
+                j++;
+            }
+            i=j;
+        }
+        return elided?groups<8:groups==8;
+    }
+
+    private static boolean isIPv4Address(byte[] raw, int start, int end)
+    {
+        int octets=0;
+        int i=start;
+        while (i<end)
+        {
+            int j=i;
+            int value=0;
+            while (j<end && raw[j]>='0' && raw[j]<='9' && j-i<3)
+                value=value*10+raw[j++]-'0';
+            if (j==i || value>255 || j-i>1 && raw[i]=='0')
+                return false;
+            octets++;
+            if (j==end)
+                break;
+            if (raw[j]!='.' || octets==4)
+                return false;
+            i=j+1;
+            if (i==end)
+                return false;
+        }
+        return octets==4;
     }
 
     private static boolean isHexDigit(char c)

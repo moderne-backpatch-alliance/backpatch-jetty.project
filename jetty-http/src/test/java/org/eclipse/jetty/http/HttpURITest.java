@@ -124,13 +124,14 @@ public class HttpURITest
             "https://user%0@host/path",
             "https://host:notport/path",
             "https://user @host.com/",
-            "https://user#@host.com/",
             "https://user@host@other.com/",
             "https://[notIpv6]/",
             "https://bad[0::1::2::3::4]/",
             "http://browser.check &@vulndetector.com/",
             "http://browser.check #@vulndetector.com/",
-            "http://browser.check#@vulndetector.com/",
+            "http://[normal.com@]vulndetector.com/",
+            "http://normal.com[user@vulndetector].com/",
+            "http://normal.com[@]vulndetector.com/",
             "http://vulndetector.com\\/",
             "http://host\u00e9.com/",
         };
@@ -161,6 +162,11 @@ public class HttpURITest
             {"http://user@[2001:db8::1]:8080/path","[2001:db8::1]","8080"},
             {"http://[::ffff:127.0.0.1]/path","[::ffff:127.0.0.1]","-1"},
             {"http://host","host","-1"},
+            {"http://[::]/path","[::]","-1"},
+            {"http://[0:0:0:0:0:ffff:127.0.0.1]/path","[0:0:0:0:0:ffff:127.0.0.1]","-1"},
+            {"http://[1:2:3:4:5:6:7:8]:80/path","[1:2:3:4:5:6:7:8]","80"},
+            {"http://[1::]/path","[1::]","-1"},
+            {"http://[::1]","[::1]","-1"},
         };
         for (String[] test:good)
         {
@@ -168,5 +174,68 @@ public class HttpURITest
             assertEquals(test[0], test[1], uri.getHost());
             assertEquals(test[0], Integer.parseInt(test[2]), uri.getPort());
         }
+    }
+
+    /* ------------------------------------------------------------ */
+    @Test
+    public void testAuthorityEndsAtQueryOrFragment() throws Exception
+    {
+        HttpURI uri = new HttpURI("http://good.com#@evil.com");
+        assertEquals("good.com", uri.getHost());
+        assertEquals("//good.com", uri.getAuthority());
+        assertEquals(null, uri.getPath());
+        assertEquals(null, uri.getQuery());
+        assertEquals("@evil.com", uri.getFragment());
+
+        uri = new HttpURI("http://good.com?@evil.com");
+        assertEquals("good.com", uri.getHost());
+        assertEquals(null, uri.getPath());
+        assertEquals("@evil.com", uri.getQuery());
+        assertEquals(null, uri.getFragment());
+
+        uri = new HttpURI("http://browser.check?@vulndetector.com/");
+        assertEquals("browser.check", uri.getHost());
+        assertEquals("@vulndetector.com/", uri.getQuery());
+    }
+
+    /* ------------------------------------------------------------ */
+    @Test
+    public void testBadSchemesAndIPv6() throws Exception
+    {
+        String[] bad=
+        {
+            "://host/path",
+            "\t://host/path",
+            "  ://host/path",
+            "unknown^://host/path",
+            "http^://host/path",
+            "https>://vulndetector.com/path",
+            "1http://host/path",
+            "http://[::1]x/path",
+            "http://[::1]@host/path",
+            "http://[1:2:3]/path",
+            "http://[0::1::2]/path",
+            "http://[12345::1]/path",
+            "http://[1:2:3:4:5:6:7:8:9]/path",
+            "http://[::256.1.1.1]/path",
+            "http://[::1.2.3]/path",
+            "http://[::01.2.3.4]/path",
+            "http://[1.2.3.4]/path",
+            "http://[]/path",
+        };
+        for (String uri:bad)
+        {
+            try
+            {
+                HttpURI httpURI = new HttpURI(uri);
+                fail(uri+" parsed with scheme "+httpURI.getScheme()+" host "+httpURI.getHost());
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+        }
+        assertEquals("svn+ssh", new HttpURI("svn+ssh://host/path").getScheme());
+        assertEquals("xxxxx", new HttpURI("xxxxx://host/path").getScheme());
     }
 }
