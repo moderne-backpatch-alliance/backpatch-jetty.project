@@ -322,4 +322,43 @@ public class HttpURITest
             assertEquals(test[0], test[0], uri.getPath());
         }
     }
+
+    /* ------------------------------------------------------------ */
+    @Test
+    public void testConnectBadIPv6() throws Exception
+    {
+        String[] bad=
+        {
+            "[1:2:3]:443",
+            "[0::1::2]:443",
+            "[127::0::0::1]:8080",
+            "[12345::1]:443",
+            "[1:2:3:4:5:6:7:8:9]:443",
+            "[::256.1.1.1]:443",
+            "[1.2.3.4]:443",
+            "[]:443",
+            "[::1]x:443",
+            "[::1]]:443",
+        };
+        for (String target:bad)
+        {
+            try
+            {
+                HttpURI uri = new HttpURI();
+                uri.parseConnect(target);
+                fail(target+" parsed with host "+uri.getHost()+" port "+uri.getPort());
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+        }
+        for (String target:new String[]{"[::1]:443","[2001:db8::1]:443","[1:2:3:4:5:6:7:8]:443","[::]:443"})
+        {
+            HttpURI uri = new HttpURI();
+            uri.parseConnect(target);
+            assertEquals(target, target.substring(0,target.indexOf(']')+1), uri.getHost());
+            assertEquals(target, 443, uri.getPort());
+        }
+    }
 }

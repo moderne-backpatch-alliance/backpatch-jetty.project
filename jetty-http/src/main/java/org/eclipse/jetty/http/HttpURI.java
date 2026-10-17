@@ -149,6 +149,7 @@ public class HttpURI
         int e=offset+length;
         int state=AUTH;
         int encodedCharacters=0;
+        boolean afterIPv6=false;
         _end=offset+length;
         _scheme=offset;
         _authority=offset;
@@ -169,6 +170,9 @@ public class HttpURI
             {
                 case AUTH:
                 {
+                    // after an IP-literal only the port may follow
+                    if (afterIPv6 && c!=':')
+                        throw new IllegalArgumentException("Bad authority");
                     switch (c)
                     {
                         case ':':
@@ -228,6 +232,9 @@ public class HttpURI
                         }
                         case ']':
                         {
+                            if (!isIPv6Address(_raw,offset+1,s))
+                                throw new IllegalArgumentException("Bad IPv6 address");
+                            afterIPv6 = true;
                             state = AUTH;
                             break;
                         }
