@@ -219,6 +219,8 @@ public class HttpURI
         int e=offset+length;
         int state=START;
         int m=offset;
+        boolean user=false;
+        int encodedCharacters=0;
         _end=offset+length;
         _scheme=offset;
         _authority=offset;
@@ -376,6 +378,8 @@ public class HttpURI
 
                         case '/':
                         {
+                            if (encodedCharacters>0)
+                                throw new IllegalArgumentException("Bad authority");
                             m = s;
                             _path = m;
                             _port = _path;
@@ -384,6 +388,8 @@ public class HttpURI
                         }
                         case ';':
                         {
+                            if (encodedCharacters>0)
+                                throw new IllegalArgumentException("Bad authority");
                             // ends the authority: an empty path with a parameter
                             _path = s;
                             _port = _path;
@@ -393,18 +399,44 @@ public class HttpURI
                         }
                         case '@':
                         {
+                            if (user || encodedCharacters>0)
+                                throw new IllegalArgumentException("Bad authority");
+                            user = true;
                             _host = i;
                             break;
                         }
                         case ':':
                         {
+                            if (encodedCharacters>0)
+                                throw new IllegalArgumentException("Bad authority");
                             _port = s;
                             state = PORT;
                             break;
                         }
                         case '[':
                         {
+                            if (s!=_host)
+                                throw new IllegalArgumentException("Bad authority");
                             state = IPV6;
+                            break;
+                        }
+                        case '%':
+                        {
+                            if (encodedCharacters>0)
+                                throw new IllegalArgumentException("Bad authority");
+                            encodedCharacters=2;
+                            break;
+                        }
+                        default:
+                        {
+                            if (encodedCharacters>0)
+                            {
+                                if (!isHexDigit(c))
+                                    throw new IllegalArgumentException("Bad authority");
+                                encodedCharacters--;
+                            }
+                            else if (!isUnreservedOrSubDelim(c))
+                                throw new IllegalArgumentException("Bad authority");
                             break;
                         }
                     }
@@ -424,6 +456,13 @@ public class HttpURI
                             state = AUTH;
                             break;
                         }
+                        case ':':
+                        case '.':
+                            break;
+                        default:
+                            if (!isHexDigit(c))
+                                throw new IllegalArgumentException("Bad authority");
+                            break;
                     }
 
                     continue;
@@ -511,8 +550,31 @@ public class HttpURI
             }
         }
 
+        if (state==AUTH && encodedCharacters>0)
+            throw new IllegalArgumentException("Bad authority");
+
         if (_port<_path)
             _portValue=TypeUtil.parseInt(_raw, _port+1, _path-_port-1,10);
+    }
+
+    private static boolean isHexDigit(char c)
+    {
+        return c>='0' && c<='9' || c>='a' && c<='f' || c>='A' && c<='F';
+    }
+
+    /* unreserved / sub-delims of RFC 3986 2.2 and 2.3, the characters of a reg-name or userinfo besides pct-encoded */
+    private static boolean isUnreservedOrSubDelim(char c)
+    {
+        if (c>='a' && c<='z' || c>='A' && c<='Z' || c>='0' && c<='9')
+            return true;
+        switch (c)
+        {
+            case '-': case '.': case '_': case '~':
+            case '!': case '$': case '&': case '\'': case '(': case ')': case '*': case '+': case ',': case ';': case '=':
+                return true;
+            default:
+                return false;
+        }
     }
 
     public String getScheme()
