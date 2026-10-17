@@ -238,4 +238,27 @@ public class HttpURITest
         assertEquals("svn+ssh", new HttpURI("svn+ssh://host/path").getScheme());
         assertEquals("xxxxx", new HttpURI("xxxxx://host/path").getScheme());
     }
+
+    /* ------------------------------------------------------------ */
+    @Test
+    public void testConnectSemicolonIsBadAuthority() throws Exception
+    {
+        for (String target:new String[]{"localhost;:443","host;x:443","[::1];:443"})
+        {
+            try
+            {
+                HttpURI uri = new HttpURI();
+                uri.parseConnect(target);
+                fail(target+" parsed with host "+uri.getHost());
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
+            }
+        }
+        HttpURI uri = new HttpURI();
+        uri.parseConnect("localhost:443");
+        assertEquals("localhost", uri.getHost());
+        assertEquals(443, uri.getPort());
+    }
 }

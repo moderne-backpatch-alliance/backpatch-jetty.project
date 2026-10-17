@@ -180,6 +180,11 @@ public class HttpURI
                             state = IPV6;
                             break;
                         }
+                        case ';':
+                        {
+                            // ';' ends the authority in parse2; an authority-form target has nothing after it
+                            throw new IllegalArgumentException("Bad authority");
+                        }
                     }
                     continue;
                 }
