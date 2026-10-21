@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.2.30.v20200428-backpatch-00004
+release: 9.2.30.v20200428-backpatch-00005
 baseline: v9.2.30.v20200428+backpatch.baseline
 fixes:
   - cve: CVE-2021-28165
@@ -34,12 +34,20 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-server
-    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00004 (backpatch-jetty.project@20edb9a..8360b0a).
+    note: Carried from 9.2.30.v20200428-backpatch-00004.
+  - cve: CVE-2026-19203
+    upstream_fix_url: https://github.com/jetty/jetty.project/pull/15503
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-19203
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/a333152
+    basis: adapted
+    artifacts:
+      - org.eclipse.jetty:jetty-http
+    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00005 (backpatch-jetty.project@a333152).
 tests:
-  commit: 8360b0a1376ff0312cc0a5a4590adb7c20d1b95b
+  commit: a33315251160ad02a8d5885a2dc623b579a206a2
   command: JAVA_HOME=<jdk-7> /bin/bash <alliance>/work/wave2/items/scripts/jetty-9.2.30.sh suite <m2> 
   runtime: Azul Zulu (Java 1.7.0_76), Apache Maven 3.6.3, macOS x86_64 under Rosetta 2
-  report: jetty-server-9.2.30.v20200428-backpatch-00004-tests.zip
-  report_sha256: 3c03f9d76a1575417f53b45ef89f47ef0da484e89a282922bc52199cc0ec47e9
+  report: jetty-http-9.2.30.v20200428-backpatch-00005-tests.zip
+  report_sha256: 17247fde2fe7ab0d8b513fa0ef762df3ee7c8948e86c2413b6586f116dd83236
   result: pass
-  note: the full suite at the tested commit, 2078 tests run, 0 failed, 25 skipped; the regression tests for CVE-2023-26049 are CookieCutterTest, RequestTest
+  note: the full suite at the tested commit, 2082 tests run, 0 failed, 25 skipped; the regression tests for CVE-2026-19203 are HttpParserTest, PartialRFC2616Test
