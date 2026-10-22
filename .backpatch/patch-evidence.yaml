@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.2.30.v20200428-backpatch-00005
+release: 9.2.30.v20200428-backpatch-00006
 baseline: v9.2.30.v20200428+backpatch.baseline
 fixes:
   - cve: CVE-2021-28165
@@ -42,12 +42,21 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00005 (backpatch-jetty.project@a333152).
+    note: Carried from 9.2.30.v20200428-backpatch-00005.
+  - cve: CVE-2023-26048
+    upstream_fix_url: https://github.com/jetty/jetty.project/pull/9345
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2023-26048
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/bd00a1f
+    basis: adapted
+    artifacts:
+      - org.eclipse.jetty:jetty-util
+      - org.eclipse.jetty:jetty-server
+    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00006 (backpatch-jetty.project@bd00a1f).
 tests:
-  commit: a33315251160ad02a8d5885a2dc623b579a206a2
-  command: JAVA_HOME=<jdk-7> /bin/bash <alliance>/work/wave2/items/scripts/jetty-9.2.30.sh suite <m2> 
+  commit: bd00a1f8f82009c2596781a3b618420852401b40
+  command: "JAVA_HOME=<jdk-7> /bin/bash <alliance>/work/wave2/items/scripts/jetty-9.2.30.sh suite <m2> "
   runtime: Azul Zulu (Java 1.7.0_76), Apache Maven 3.6.3, macOS x86_64 under Rosetta 2
-  report: jetty-http-9.2.30.v20200428-backpatch-00005-tests.zip
-  report_sha256: 17247fde2fe7ab0d8b513fa0ef762df3ee7c8948e86c2413b6586f116dd83236
+  report: jetty-util-9.2.30.v20200428-backpatch-00006-tests.zip
+  report_sha256: 527bc58d699ad0e19430eeba213ef91dbbcd431cf08e73feec9c63518f4f7ac1
   result: pass
-  note: the full suite at the tested commit, 2082 tests run, 0 failed, 25 skipped; the regression tests for CVE-2026-19203 are HttpParserTest, PartialRFC2616Test
+  note: "run at c657cda1c279, whose tree equals this commit's apart from .backpatch/patch-evidence.yaml; the full suite at the tested commit, 2086 tests run, 1 failed, each failing at the baseline v9.2.30.v20200428+backpatch.baseline too (the same suite there: 2070 run, 1 failed), 25 skipped; the regression tests for CVE-2023-26048 are MultiPartInputStreamTest, RequestTest"
