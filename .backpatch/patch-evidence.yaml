@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.2.30.v20200428-backpatch-00007
+release: 9.2.30.v20200428-backpatch-00008
 baseline: v9.2.30.v20200428+backpatch.baseline
 fixes:
   - cve: CVE-2021-28165
@@ -59,12 +59,20 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00007 (backpatch-jetty.project@3ca59f8..eb7ed8f).
+    note: Carried from 9.2.30.v20200428-backpatch-00007.
+  - cve: CVE-2025-11143
+    upstream_fix_url: https://github.com/eclipse/jetty.project/commit/89d2ac7c7792e51cd4b5b633f249fc4c32e5c67b
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2025-11143
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/compare/ed47fee~1...355a379
+    basis: adapted
+    artifacts:
+      - org.eclipse.jetty:jetty-http
+    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00008 (backpatch-jetty.project@ed47fee..355a379).
 tests:
-  commit: eb7ed8fbfbc7a197510508f27eb91616913aa808
+  commit: 355a3793f6286ad7e11822fa88c7129ab9ce9c17
   command: "JAVA_HOME=<jdk-7> /bin/bash <alliance>/work/wave2/items/scripts/jetty-9.2.30.sh suite <m2> "
   runtime: Azul Zulu (Java 1.7.0_76), Apache Maven 3.6.3, macOS x86_64 under Rosetta 2
-  report: jetty-http-9.2.30.v20200428-backpatch-00007-tests.zip
-  report_sha256: 78308d6a9fcf7f56d4eac0bcf7319bbe62e2418a0de0bf4353f058da7b8e3d07
+  report: jetty-http-9.2.30.v20200428-backpatch-00008-tests.zip
+  report_sha256: 6ba74fa6a7296a946b87fea09b4882a3409217610de34d54aa9a4b08a092362d
   result: pass
-  note: run at c6356743d969, whose tree equals this commit's apart from .backpatch/patch-evidence.yaml; the full suite at the tested commit, 2092 tests run, 0 failed, 25 skipped; the regression tests for CVE-2022-2047 are HttpURITest
+  note: run at 55309bf64914, whose tree equals this commit's apart from .backpatch/patch-evidence.yaml; the full suite at the tested commit, 2095 tests run, 0 failed, 25 skipped; the regression tests for CVE-2025-11143 are HttpURITest
