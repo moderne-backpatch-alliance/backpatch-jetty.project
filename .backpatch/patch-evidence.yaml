@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.2.30.v20200428-backpatch-00008
+release: 9.2.30.v20200428-backpatch-00009
 baseline: v9.2.30.v20200428+backpatch.baseline
 fixes:
   - cve: CVE-2021-28165
@@ -67,12 +67,20 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00008 (backpatch-jetty.project@ed47fee..355a379).
+    note: Carried from 9.2.30.v20200428-backpatch-00008.
+  - cve: CVE-2026-2332
+    upstream_fix_url: https://github.com/eclipse/jetty.project/commit/ff9eb742492d6dc3191bcd49668b1bce1e620d57
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-2332
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/compare/21c5405~1...d76cba2
+    basis: adapted
+    artifacts:
+      - org.eclipse.jetty:jetty-http
+    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00009 (backpatch-jetty.project@21c5405..d76cba2).
 tests:
-  commit: 355a3793f6286ad7e11822fa88c7129ab9ce9c17
+  commit: d76cba2da78ce49df844086c9277b6f4edf1e81a
   command: "JAVA_HOME=<jdk-7> /bin/bash <alliance>/work/wave2/items/scripts/jetty-9.2.30.sh suite <m2> "
   runtime: Azul Zulu (Java 1.7.0_76), Apache Maven 3.6.3, macOS x86_64 under Rosetta 2
-  report: jetty-http-9.2.30.v20200428-backpatch-00008-tests.zip
-  report_sha256: 6ba74fa6a7296a946b87fea09b4882a3409217610de34d54aa9a4b08a092362d
+  report: jetty-http-9.2.30.v20200428-backpatch-00009-tests.zip
+  report_sha256: 39fad948e6ff98cf254f70b735981cd4c017f547f69bb3f74132a60684ba0139
   result: pass
-  note: run at 55309bf64914, whose tree equals this commit's apart from .backpatch/patch-evidence.yaml; the full suite at the tested commit, 2095 tests run, 0 failed, 25 skipped; the regression tests for CVE-2025-11143 are HttpURITest
+  note: run at a7690de96e4a, whose tree equals this commit's apart from .backpatch/patch-evidence.yaml; the full suite at the tested commit, 2096 tests run, 0 failed, 25 skipped; the regression tests for CVE-2026-2332 are HttpConnectionTest, HttpParserTest, PartialRFC2616Test
