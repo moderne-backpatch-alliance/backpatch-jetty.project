@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.2.30.v20200428-backpatch-00010
+release: 9.2.30.v20200428-backpatch-00011
 baseline: v9.2.30.v20200428+backpatch.baseline
 fixes:
   - cve: CVE-2021-28165
@@ -10,7 +10,7 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-io
-    note: Carried from 9.2.30.v20200428-backpatch-00001.
+    note: Carried from 9.2.30.v20200428-backpatch-00001; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00001 (backpatch-jetty.project@0599fc8).
   - cve: CVE-2021-34428
     upstream_fix_url: https://github.com/eclipse/jetty.project/commit/09d74ab4490568319dc05fc956e33af48db776d3
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2021-34428
@@ -18,7 +18,7 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-server
-    note: Carried from 9.2.30.v20200428-backpatch-00002.
+    note: Carried from 9.2.30.v20200428-backpatch-00002; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00002 (backpatch-jetty.project@54372bf).
   - cve: CVE-2023-40167
     upstream_fix_url: https://github.com/eclipse/jetty.project/commit/e4d596eafc887bcd813ae6e28295b5ce327def47
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2023-40167
@@ -26,7 +26,7 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: Carried from 9.2.30.v20200428-backpatch-00003.
+    note: Carried from 9.2.30.v20200428-backpatch-00003; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00003 (backpatch-jetty.project@961b22a).
   - cve: CVE-2023-26049
     upstream_fix_url: https://github.com/eclipse/jetty.project/commit/1be1401bafb4c46fae3c234c8e93743a661dcf21
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2023-26049
@@ -34,7 +34,7 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-server
-    note: Carried from 9.2.30.v20200428-backpatch-00004.
+    note: Carried from 9.2.30.v20200428-backpatch-00004; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00004 (backpatch-jetty.project@20edb9a..8360b0a).
   - cve: CVE-2026-19203
     upstream_fix_url: https://github.com/jetty/jetty.project/pull/15503
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-19203
@@ -42,7 +42,7 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: Carried from 9.2.30.v20200428-backpatch-00005.
+    note: Carried from 9.2.30.v20200428-backpatch-00005; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00005 (backpatch-jetty.project@a333152).
   - cve: CVE-2023-26048
     upstream_fix_url: https://github.com/jetty/jetty.project/pull/9345
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2023-26048
@@ -51,7 +51,7 @@ fixes:
     artifacts:
       - org.eclipse.jetty:jetty-util
       - org.eclipse.jetty:jetty-server
-    note: Carried from 9.2.30.v20200428-backpatch-00006.
+    note: Carried from 9.2.30.v20200428-backpatch-00006; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00006 (backpatch-jetty.project@bd00a1f).
   - cve: CVE-2022-2047
     upstream_fix_url: https://github.com/eclipse/jetty.project/commit/db8bb7a8631aafc7897032b133a5b425854e5841
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2022-2047
@@ -59,7 +59,7 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: Carried from 9.2.30.v20200428-backpatch-00007.
+    note: Carried from 9.2.30.v20200428-backpatch-00007; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00007 (backpatch-jetty.project@3ca59f8..eb7ed8f).
   - cve: CVE-2025-11143
     upstream_fix_url: https://github.com/eclipse/jetty.project/commit/89d2ac7c7792e51cd4b5b633f249fc4c32e5c67b
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2025-11143
@@ -67,7 +67,7 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: Carried from 9.2.30.v20200428-backpatch-00008.
+    note: Carried from 9.2.30.v20200428-backpatch-00008; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00008 (backpatch-jetty.project@ed47fee..355a379).
   - cve: CVE-2026-2332
     upstream_fix_url: https://github.com/eclipse/jetty.project/commit/ff9eb742492d6dc3191bcd49668b1bce1e620d57
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-2332
@@ -75,7 +75,7 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: Carried from 9.2.30.v20200428-backpatch-00009.
+    note: Carried from 9.2.30.v20200428-backpatch-00009; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00009 (backpatch-jetty.project@21c5405..d76cba2).
   - cve: CVE-2024-6763
     upstream_fix_url: https://github.com/eclipse/jetty.project/commit/db8bb7a8631aafc7897032b133a5b425854e5841
     advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2024-6763
@@ -84,12 +84,20 @@ fixes:
     artifacts:
       - org.eclipse.jetty:jetty-http
       - org.eclipse.jetty:jetty-server
-    note: New in this release; adapted onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00010 (backpatch-jetty.project@0acb535..26d9cf4).
+    note: Carried from 9.2.30.v20200428-backpatch-00010; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00010 (backpatch-jetty.project@0acb535..26d9cf4).
+  - cve: CVE-2026-10050
+    upstream_fix_url: https://github.com/jetty/jetty.project/pull/15183
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-10050
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/4166e0b
+    basis: adapted
+    artifacts:
+      - org.eclipse.jetty:jetty-security
+    note: New in this release; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00011 (backpatch-jetty.project@4166e0b).
 tests:
-  commit: 26d9cf4d52b234a72d548360e693655e8897c087
-  command: "JAVA_HOME=<jdk-7> /bin/bash <alliance>/work/wave2/items/scripts/jetty-9.2.30.sh suite <m2> "
+  commit: 4166e0b2e5cdffc3f9ea4b25ed0c18b4887b2c8d
+  command: JAVA_HOME=<jdk-7> /bin/bash <alliance>/work/wave2/items/scripts/jetty-9.2.30.sh suite <m2> "" -pl jetty-security
   runtime: Azul Zulu (Java 1.7.0_76), Apache Maven 3.6.3, macOS x86_64 under Rosetta 2
-  report: jetty-http-9.2.30.v20200428-backpatch-00010-tests.zip
-  report_sha256: a2fc3b4501146d54bb058520cd7a8c0515400429d0495ad2ba7a16e734ada1d1
+  report: jetty-security-9.2.30.v20200428-backpatch-00011-tests.zip
+  report_sha256: 5024efc84f1190b37e0ac9f00c014a84d9c32c31e54bc75ca5bff7d2aa8908a9
   result: pass
-  note: run at 3c82311e4c91, whose tree equals this commit's apart from .backpatch/patch-evidence.yaml; the full suite at the tested commit, 2098 tests run, 0 failed, 25 skipped; the regression tests for CVE-2024-6763 are HttpConnectionTest, HttpURITest
+  note: the full suite at the tested commit (jetty-util, jetty-http, jetty-io, jetty-server and jetty-security), 2146 tests run, 0 failed, 25 skipped; an earlier full run at the same commit had one error, ExtendedServerTest#testFullURI with "Connection reset", which also failed once at the baseline and passed in this run; the regression tests for CVE-2026-10050 are DigestCharsetCollisionTest
