@@ -194,6 +194,7 @@ public class HttpParser
     private int _chunkPosition;
     private ChunkExtState _chunkExtState = ChunkExtState.EXT_BWS;
     private boolean _chunkQuotedEscape;
+    private boolean _chunkDataEnd;
     private boolean _headResponse;
     private boolean _cr;
     private ByteBuffer _contentChunk;
@@ -1751,16 +1752,19 @@ public class HttpParser
                     switch (t.getType())
                     {
                         case LF:
+                            _chunkDataEnd = false;
                             break;
 
                         case DIGIT:
+                            if (_chunkDataEnd)
+                                throw new IllegalCharacterException(_state, t, buffer);
                             _chunkLength = t.getHexDigit();
                             _chunkPosition = 0;
                             setState(State.CHUNK_SIZE);
                             break;
 
                         case ALPHA:
-                            if (t.isHexDigit())
+                            if (t.isHexDigit() && !_chunkDataEnd)
                             {
                                 _chunkLength = t.getHexDigit();
                                 _chunkPosition = 0;
@@ -1956,6 +1960,7 @@ public class HttpParser
                     int chunk = _chunkLength - _chunkPosition;
                     if (chunk == 0)
                     {
+                        _chunkDataEnd = true;
                         setState(State.CHUNKED_CONTENT);
                     }
                     else
@@ -2103,6 +2108,7 @@ public class HttpParser
         _headerBytes = 0;
         _host = false;
         _headerComplete = false;
+        _chunkDataEnd = false;
     }
 
     protected void setState(State state)

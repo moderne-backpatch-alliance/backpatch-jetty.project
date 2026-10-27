@@ -1076,6 +1076,40 @@ public class HttpParserTest
         assertThat(_bad, containsString("Bad Transfer-Encoding"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"1\r\nX0\r\n\r\n", "1\r\nXa\r\n0\r\n\r\n", "2;ext\r\nXY0\r\n\r\n"})
+    public void testChunkDataWithoutLineTerminator(String chunked)
+    {
+        ByteBuffer buffer = BufferUtil.toBuffer(
+            "GET /chunk HTTP/1.0\r\n" +
+                "Transfer-Encoding: chunked\r\n" +
+                "\r\n" +
+                chunked);
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        parseAll(parser, buffer);
+
+        assertTrue(_early);
+        assertFalse(_messageCompleted);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1\r\nX\r\n0\r\n\r\n", "1\r\nX\n0\r\n\r\n", "2;ext\r\nXY\r\n0\r\n\r\n"})
+    public void testChunkDataWithLineTerminator(String chunked)
+    {
+        ByteBuffer buffer = BufferUtil.toBuffer(
+            "GET /chunk HTTP/1.0\r\n" +
+                "Transfer-Encoding: chunked\r\n" +
+                "\r\n" +
+                chunked);
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler);
+        parseAll(parser, buffer);
+
+        assertFalse(_early);
+        assertTrue(_messageCompleted);
+    }
+
     @Test
     public void testChunkParseTrailer()
     {
