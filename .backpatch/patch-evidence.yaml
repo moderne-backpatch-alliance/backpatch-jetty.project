@@ -1,32 +1,55 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.4.58.v20250814-backpatch-00004
+release: 9.4.58.v20250814-backpatch-00005
 baseline: v9.4.58.v20250814+backpatch.baseline
 fixes:
   - cve: CVE-2026-2332
-    upstream: https://nvd.nist.gov/vuln/detail/CVE-2026-2332
+    upstream_fix_url: https://github.com/jetty/jetty.project/commit/ff9eb742492d6dc3191bcd49668b1bce1e620d57
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-2332
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/e9b71a8
+    basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: Carried from 9.4.58.v20250814-backpatch-00001; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00001 (backpatch-jetty.project@e9b71a8).
+    note: Carried from 9.4.58.v20250814-backpatch-00001; a superseded fix, ported onto 9.4.58.v20250814 at 9.4.58.v20250814-backpatch-00001 (backpatch-jetty.project@e9b71a8).
   - cve: CVE-2026-10050
-    upstream: https://nvd.nist.gov/vuln/detail/CVE-2026-10050
+    upstream_fix_url: https://github.com/jetty/jetty.project/commit/4bcdbc7db387ce9e20e2c7571a7250280466221d
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-10050
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/5e1d893
+    basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-security
     note: Carried from 9.4.58.v20250814-backpatch-00002; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00002 (backpatch-jetty.project@5e1d893).
   - cve: CVE-2025-11143
-    upstream: https://nvd.nist.gov/vuln/detail/CVE-2025-11143
+    upstream_fix_url: https://github.com/jetty/jetty.project/commit/553b59eff83461a7e488e592bcc3bb958a76f13f
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2025-11143
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/2701fbf
+    basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-http
-    note: Carried from 9.4.58.v20250814-backpatch-00003; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00003 (backpatch-jetty.project@2701fbf).
+    note: Carried from 9.4.58.v20250814-backpatch-00003; a superseded fix, ported onto 9.4.58.v20250814 at 9.4.58.v20250814-backpatch-00003 (backpatch-jetty.project@2701fbf).
   - cve: CVE-2026-5795
-    upstream: https://nvd.nist.gov/vuln/detail/CVE-2026-5795
+    upstream_fix_url: https://github.com/jetty/jetty.project/commit/332d14d013c1b13db875a822f52a503c48a6ab03
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-5795
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/c6a2e1e
+    basis: backport
     artifacts:
       - org.eclipse.jetty:jetty-jaspi
-    note: New in this release; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00004 (backpatch-jetty.project@c6a2e1e).
+    note: Carried from 9.4.58.v20250814-backpatch-00004; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00004 (backpatch-jetty.project@c6a2e1e).
+  - cve: CVE-2025-11143
+    upstream_fix_url: https://github.com/jetty/jetty.project/commit/89d2ac7c7792e51cd4b5b633f249fc4c32e5c67b
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2025-11143
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/42c95fb
+    basis: backport
+    artifacts:
+      - org.eclipse.jetty:jetty-http
+      - org.eclipse.jetty:jetty-util
+      - org.eclipse.jetty:jetty-client
+    note: New in this release; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00005 (backpatch-jetty.project@42c95fb).
 tests:
-  commit: c6a2e1e7b01b78fa082665ef29efb27c0fa8d339
-  command: mvn -B -q -pl jetty-jaspi -am test -Dtest=JaspiCallbackResidueTest -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false
-  runtime: OpenJDK 1.8.0_372 (Zulu), Apache Maven 3.9.14
-  report: jetty-jaspi-9.4.58.v20250814-backpatch-00004-tests.zip
+  commit: 42c95fbd69529c4ade9f14a103c7bc38816c1bcd
+  command: mvn -B -o -Dmaven.buildNumber.skip=true -pl jetty-util,jetty-jmx,jetty-io,jetty-http,jetty-xml,jetty-util-ajax,jetty-server,jetty-servlet,jetty-client,jetty-proxy,tests/test-integration,jetty-annotations,jetty-http2/http2-hpack,jetty-http2/http2-common,jetty-http2/http2-server,jetty-http2/http2-client,jetty-http2/http2-http-client-transport -am install -DskipTests -Dsurefire.rerunFailingTestsCount=3, then mvn -B -o -Dmaven.buildNumber.skip=true -pl jetty-util,jetty-jmx,jetty-io,jetty-http,jetty-xml,jetty-util-ajax,jetty-server,jetty-servlet,jetty-client,jetty-proxy,tests/test-integration,jetty-annotations,jetty-http2/http2-hpack,jetty-http2/http2-common,jetty-http2/http2-server,jetty-http2/http2-client,jetty-http2/http2-http-client-transport test -Dmaven.test.failure.ignore=true -Dsurefire.rerunFailingTestsCount=3
+  runtime: OpenJDK 17.0.16 (Zulu 17.60+17, linux-aarch64), Apache Maven 3.9.16, Debian bookworm container, en_US.UTF-8
+  report: jetty-http-9.4.58.v20250814-backpatch-00005-tests.zip
+  report_sha256: 0c45a375ee707490b716c1e83f47e6d2b87207cdcd2e5784498dc423c6ba7640
   result: pass
-  note: the regression tests the fix commits touched, 2 test(s) run, 0 failed, at the tested commit
+  note: the full jetty-9.4 suite (jetty-annotations 30, jetty-client 608, jetty-http 1465, http2-client 150, http2-common 43, http2-hpack 48, http2-http-client-transport 53, http2-server 22, jetty-io 99, jetty-jmx 53, jetty-proxy 227, jetty-server 2445, jetty-servlet 525, jetty-util 1710, jetty-util-ajax 89, jetty-xml 116, test-integration 1084 tests run), 0 failed, 0 errors, 245 skipped, at the tested commit, in a Linux container; jetty-util PathWatcherTest#testDeployFilesNewDir failed twice and passed on its third attempt (two flakyFailure entries in its report, whose tests attribute surefire writes as 1)
