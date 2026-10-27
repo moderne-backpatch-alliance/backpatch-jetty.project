@@ -191,36 +191,6 @@ public class HttpURI
         return c < __unreservedPctEncodedSubDelims.length && __unreservedPctEncodedSubDelims[c];
     }
 
-    /**
-     * Validate the scheme.
-     *
-     * @param scheme The scheme to validate
-     * @return The scheme, unchanged
-     * @throws IllegalArgumentException If the scheme is not valid
-     */
-    private static String validateScheme(String scheme)
-    {
-        if (scheme == null || scheme.isEmpty())
-            throw new IllegalArgumentException("Bad scheme");
-
-        //  scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-        for (int i = 0; i < scheme.length(); i++)
-        {
-            char c = scheme.charAt(i);
-            if (c >= 'A' && c <= 'Z' ||
-                c >= 'a' && c <= 'z' ||
-                (i > 0 && (c >= '0' && c <= '9' ||
-                    c == '.' ||
-                    c == '+' ||
-                    c == '-')))
-                continue;
-
-            throw new IllegalArgumentException("Bad scheme");
-        }
-
-        return scheme;
-    }
-
     static
     {
         // Establish allowed and disallowed characters per the path rules of
@@ -463,7 +433,8 @@ public class HttpURI
                     switch (c)
                     {
                         case '/':
-                            mark = i;
+                            pathMark = mark = i;
+                            segment = mark + 1;
                             state = State.HOST_OR_PATH;
                             break;
                         case ';':
@@ -523,7 +494,7 @@ public class HttpURI
                     {
                         case ':':
                             // must have been a scheme
-                            _scheme = validateScheme(uri.substring(mark, i));
+                            _scheme = URIUtil.validateScheme(uri.substring(mark, i));
                             // Start again with scheme set
                             state = State.START;
                             break;
@@ -628,8 +599,19 @@ public class HttpURI
                             encoded = true;
                             break;
                         case '#':
+                        case '?':
                         case ';':
-                            throw new IllegalArgumentException("Bad authority");
+                            if (encodedCharacters > 0)
+                                throw new IllegalArgumentException("Bad authority");
+                            _host = uri.substring(mark, i);
+                            if (_host.isEmpty())
+                                throw new IllegalArgumentException("Bad authority");
+                            encoded = false;
+                            pathMark = mark = i;
+                            segment = mark + 1;
+                            state = State.PATH;
+                            i--;
+                            break;
 
                         default:
                             if (encodedCharacters > 0)
@@ -653,8 +635,13 @@ public class HttpURI
                         case '/':
                             throw new IllegalArgumentException("No closing ']' for ipv6 in " + uri);
                         case ']':
-                            c = uri.charAt(++i);
-                            _host = uri.substring(mark, i);
+                            i++;
+                            String host = uri.substring(mark, i);
+                            URIUtil.validateInetAddress(host);
+                            _host = host;
+                            if (i == end)
+                                break;
+                            c = uri.charAt(i);
                             if (c == ':')
                             {
                                 mark = i + 1;
@@ -669,7 +656,7 @@ public class HttpURI
                         case ':':
                             break;
                         default:
-                            if (!isHexDigit(c))
+                            if (!isHexDigit(c) && c != '.')
                                 throw new IllegalArgumentException("Bad authority");
                             break;
                     }
@@ -837,6 +824,7 @@ public class HttpURI
                 break;
             case SCHEME_OR_PATH:
             case HOST_OR_PATH:
+                checkSegment(uri, segment, end, false);
                 _path = uri.substring(mark, end);
                 break;
             case HOST:

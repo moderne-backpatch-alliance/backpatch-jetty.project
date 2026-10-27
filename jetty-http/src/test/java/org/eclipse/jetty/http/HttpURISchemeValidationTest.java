@@ -18,6 +18,8 @@
 
 package org.eclipse.jetty.http;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -60,16 +62,15 @@ public class HttpURISchemeValidationTest
     }
 
     /**
-     * The other direction. A scheme the RFC allows must still parse, and must come back
-     * byte-for-byte as it was written: the fix validates the scheme, it does not normalise
-     * it, so a consumer comparing getScheme() sees exactly what this baseline always gave.
+     * The other direction. A scheme the RFC allows must still parse, and comes back
+     * lower-cased, as upstream's URIUtil.validateScheme returns it.
      */
     @ParameterizedTest
     @ValueSource(strings = {"http", "https", "HTTPS", "ws", "a", "x-y", "x+y", "x.y", "h2c", "view-source"})
-    public void acceptsALegalSchemeAndReturnsItUnchanged(String scheme)
+    public void acceptsALegalSchemeAndReturnsItLowerCased(String scheme)
     {
         HttpURI uri = new HttpURI(scheme + "://host/path");
-        assertThat(uri.getScheme(), is(scheme));
+        assertThat(uri.getScheme(), is(scheme.toLowerCase(Locale.ROOT)));
         assertThat(uri.getHost(), is("host"));
         assertThat(uri.getPath(), is("/path"));
     }
