@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
@@ -358,7 +359,7 @@ public class HTTP2Flusher extends IteratingCallback implements Dumpable
         synchronized (this)
         {
             closed = terminated;
-            terminated = x;
+            terminated = combine(terminated, x);
             if (LOG.isDebugEnabled())
                 LOG.debug(String.format("%s, entries processed/pending/queued=%d/%d/%d",
                     closed != null ? "Closing" : "Failing",
@@ -387,12 +388,22 @@ public class HTTP2Flusher extends IteratingCallback implements Dumpable
         synchronized (this)
         {
             closed = terminated;
-            terminated = cause;
+            terminated = combine(terminated, cause);
             if (LOG.isDebugEnabled())
                 LOG.debug("{} {}", closed != null ? "Terminated" : "Terminating", this);
         }
         if (closed == null)
             iterate();
+    }
+
+    // As ExceptionUtil.combine() in later Jetty: the first failure stays terminal, so a later null cannot reopen the flusher.
+    private static Throwable combine(Throwable first, Throwable next)
+    {
+        if (first == null)
+            return next;
+        if (next != null && next != first && !Arrays.asList(first.getSuppressed()).contains(next))
+            first.addSuppressed(next);
+        return first;
     }
 
     private void closed(Entry entry, Throwable failure)

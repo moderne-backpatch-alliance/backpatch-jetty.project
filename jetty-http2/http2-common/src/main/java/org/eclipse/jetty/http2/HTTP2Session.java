@@ -2076,7 +2076,12 @@ public abstract class HTTP2Session extends ContainerLifeCycle implements ISessio
         {
             if (LOG.isDebugEnabled())
                 LOG.debug("Terminating {}", HTTP2Session.this);
-            HTTP2Session.this.terminate(failure);
+            Throwable cause;
+            try (Locker.Lock l = lock.lock())
+            {
+                cause = failure;
+            }
+            HTTP2Session.this.terminate(cause != null ? cause : new ClosedChannelException());
             notifyClose(HTTP2Session.this, frame, Callback.NOOP);
         }
 
