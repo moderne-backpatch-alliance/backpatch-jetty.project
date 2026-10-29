@@ -55,7 +55,10 @@ public class ProxyAuthenticationProtocolHandler extends AuthenticationProtocolHa
     @Override
     public boolean accept(Request request, Response response)
     {
-        return response.getStatus() == HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407;
+        if (response.getStatus() != HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407)
+            return false;
+        HttpDestination destination = getHttpClient().destinationFor(request.getScheme(), request.getHost(), request.getPort());
+        return HttpProxy.isSentToProxy(getHttpClient(), destination.getProxy(), request);
     }
 
     @Override

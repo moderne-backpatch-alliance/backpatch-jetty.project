@@ -73,6 +73,29 @@ public class HttpProxy extends ProxyConfiguration.Proxy
         return URI.create(new Origin(scheme, getAddress()).asString());
     }
 
+    // The request itself goes to the proxy: the CONNECT that opens a tunnel (it names a configured proxy's address, an
+    // application's own CONNECT names its server), or a clear-text request in absolute form. A request inside a tunnel
+    // goes to the server, so it never carries proxy credentials nor answers a 407.
+    static boolean isSentToProxy(HttpClient client, ProxyConfiguration.Proxy proxy, Request request)
+    {
+        if (isTunnelConnect(client, request))
+            return true;
+        return proxy instanceof HttpProxy && !HttpClient.isSchemeSecure(request.getScheme());
+    }
+
+    static boolean isTunnelConnect(HttpClient client, Request request)
+    {
+        if (!HttpMethod.CONNECT.is(request.getMethod()))
+            return false;
+        for (ProxyConfiguration.Proxy configured : client.getProxyConfiguration().getProxies())
+        {
+            Origin.Address address = configured.getAddress();
+            if (configured instanceof HttpProxy && address.getHost().equalsIgnoreCase(request.getHost()) && address.getPort() == request.getPort())
+                return true;
+        }
+        return false;
+    }
+
     private static class HttpProxyClientConnectionFactory implements ClientConnectionFactory
     {
         private final ClientConnectionFactory connectionFactory;

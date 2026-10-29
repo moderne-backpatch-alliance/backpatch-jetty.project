@@ -176,7 +176,8 @@ public abstract class HttpConnection implements Connection, Attachable
             request.header(HttpHeader.COOKIE.asString(), cookies.toString());
 
         // Authentication
-        applyProxyAuthentication(request, proxy);
+        if (HttpProxy.isSentToProxy(getHttpClient(), proxy, request))
+            applyProxyAuthentication(request, proxy);
         applyRequestAuthentication(request);
     }
 

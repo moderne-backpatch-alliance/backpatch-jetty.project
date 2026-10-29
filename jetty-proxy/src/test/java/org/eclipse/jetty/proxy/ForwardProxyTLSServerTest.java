@@ -25,6 +25,8 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.security.Principal;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -589,6 +591,197 @@ public class ForwardProxyTLSServerTest
                 }
             }
         }, realm);
+    }
+
+    @ParameterizedTest
+    @MethodSource("proxyTLS")
+    public void testServer407ThroughTunnelGetsNoProxyCredentials(SslContextFactory.Server proxyTLS) throws Exception
+    {
+        String realm = "test-realm";
+        List<String> proxyAuthorizations = new CopyOnWriteArrayList<>();
+        startTLSServer(new AbstractHandler()
+        {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
+            {
+                baseRequest.setHandled(true);
+                String proxyAuth = request.getHeader(HttpHeader.PROXY_AUTHORIZATION.asString());
+                if (proxyAuth != null)
+                    proxyAuthorizations.add(proxyAuth);
+                response.setStatus(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407);
+                response.setHeader(HttpHeader.PROXY_AUTHENTICATE.asString(), "Basic realm=\"" + realm + "\"");
+            }
+        });
+        startProxy(proxyTLS);
+
+        HttpClient httpClient = new HttpClient(newClientSslContextFactory());
+        httpClient.getProxyConfiguration().getProxies().add(newHttpProxy());
+        URI uri = URI.create((proxySslContextFactory == null ? "http" : "https") + "://localhost:" + proxyConnector.getLocalPort());
+        httpClient.getAuthenticationStore().addAuthentication(new BasicAuthentication(uri, realm, "proxyUser", "proxyPassword"));
+        httpClient.start();
+
+        try
+        {
+            ContentResponse response = httpClient.newRequest("localhost", serverConnector.getLocalPort())
+                .scheme(HttpScheme.HTTPS.asString())
+                .path("/secure")
+                .timeout(5, TimeUnit.SECONDS)
+                .send();
+
+            assertEquals(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407, response.getStatus());
+            assertTrue(proxyAuthorizations.isEmpty(), proxyAuthorizations.toString());
+        }
+        finally
+        {
+            httpClient.stop();
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("proxyTLS")
+    public void testApplicationConnectThroughTunnelGetsNoProxyCredentials(SslContextFactory.Server proxyTLS) throws Exception
+    {
+        String realm = "test-realm";
+        List<String> proxyAuthorizations = new CopyOnWriteArrayList<>();
+        startTLSServer(new AbstractHandler()
+        {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
+            {
+                baseRequest.setHandled(true);
+                String proxyAuth = request.getHeader(HttpHeader.PROXY_AUTHORIZATION.asString());
+                if (proxyAuth != null)
+                    proxyAuthorizations.add(proxyAuth);
+                response.setStatus(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407);
+                response.setHeader(HttpHeader.PROXY_AUTHENTICATE.asString(), "Basic realm=\"" + realm + "\"");
+            }
+        });
+        startProxy(proxyTLS);
+
+        HttpClient httpClient = new HttpClient(newClientSslContextFactory());
+        httpClient.getProxyConfiguration().getProxies().add(newHttpProxy());
+        URI uri = URI.create((proxySslContextFactory == null ? "http" : "https") + "://localhost:" + proxyConnector.getLocalPort());
+        httpClient.getAuthenticationStore().addAuthentication(new BasicAuthentication(uri, realm, "proxyUser", "proxyPassword"));
+        httpClient.start();
+
+        try
+        {
+            String serverHostPort = "localhost:" + serverConnector.getLocalPort();
+            ContentResponse response = httpClient.newRequest("localhost", serverConnector.getLocalPort())
+                .scheme(HttpScheme.HTTPS.asString())
+                .method(HttpMethod.CONNECT)
+                .path(serverHostPort)
+                .header(HttpHeader.HOST, serverHostPort)
+                .timeout(5, TimeUnit.SECONDS)
+                .send();
+
+            assertEquals(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407, response.getStatus());
+            assertTrue(proxyAuthorizations.isEmpty(), proxyAuthorizations.toString());
+        }
+        finally
+        {
+            httpClient.stop();
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("proxyTLS")
+    public void testProxy401ToTunnelConnectGetsNoServerCredentials(SslContextFactory.Server proxyTLS) throws Exception
+    {
+        String realm = "test-realm";
+        List<String> authorizations = new CopyOnWriteArrayList<>();
+        startTLSServer(new ServerHandler());
+        startProxy(proxyTLS, new ConnectHandler()
+        {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
+            {
+                baseRequest.setHandled(true);
+                String authorization = request.getHeader(HttpHeader.AUTHORIZATION.asString());
+                if (authorization != null)
+                    authorizations.add(authorization);
+                response.setStatus(HttpStatus.UNAUTHORIZED_401);
+                response.setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), "Basic realm=\"" + realm + "\"");
+            }
+        });
+
+        HttpClient httpClient = new HttpClient(newClientSslContextFactory());
+        httpClient.getProxyConfiguration().getProxies().add(newHttpProxy());
+        URI uri = URI.create((proxySslContextFactory == null ? "http" : "https") + "://localhost:" + proxyConnector.getLocalPort());
+        httpClient.getAuthenticationStore().addAuthentication(new BasicAuthentication(uri, realm, "serverUser", "serverPassword"));
+        httpClient.start();
+
+        try
+        {
+            assertThrows(ExecutionException.class, () -> httpClient.newRequest("localhost", serverConnector.getLocalPort())
+                .scheme(HttpScheme.HTTPS.asString())
+                .timeout(5, TimeUnit.SECONDS)
+                .send());
+            assertTrue(authorizations.isEmpty(), authorizations.toString());
+        }
+        finally
+        {
+            httpClient.stop();
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("proxyTLS")
+    public void testTunnelledRequestsCarryNoProxyCredentials(SslContextFactory.Server proxyTLS) throws Exception
+    {
+        String realm = "test-realm";
+        List<String> proxyAuthorizations = new CopyOnWriteArrayList<>();
+        startTLSServer(new AbstractHandler()
+        {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
+            {
+                baseRequest.setHandled(true);
+                String proxyAuth = request.getHeader(HttpHeader.PROXY_AUTHORIZATION.asString());
+                if (proxyAuth != null)
+                    proxyAuthorizations.add(proxyAuth);
+            }
+        });
+        startProxy(proxyTLS, new ConnectHandler()
+        {
+            @Override
+            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+            {
+                String proxyAuth = request.getHeader(HttpHeader.PROXY_AUTHORIZATION.asString());
+                if (proxyAuth == null)
+                {
+                    baseRequest.setHandled(true);
+                    response.setStatus(HttpStatus.PROXY_AUTHENTICATION_REQUIRED_407);
+                    response.setHeader(HttpHeader.PROXY_AUTHENTICATE.asString(), "Basic realm=\"" + realm + "\"");
+                    return;
+                }
+                super.handle(target, baseRequest, request, response);
+            }
+        });
+
+        HttpClient httpClient = new HttpClient(newClientSslContextFactory());
+        httpClient.getProxyConfiguration().getProxies().add(newHttpProxy());
+        URI uri = URI.create((proxySslContextFactory == null ? "http" : "https") + "://localhost:" + proxyConnector.getLocalPort());
+        httpClient.getAuthenticationStore().addAuthentication(new BasicAuthentication(uri, realm, "proxyUser", "proxyPassword"));
+        httpClient.start();
+
+        try
+        {
+            for (int i = 0; i < 2; ++i)
+            {
+                ContentResponse response = httpClient.newRequest("localhost", serverConnector.getLocalPort())
+                    .scheme(HttpScheme.HTTPS.asString())
+                    .path("/" + i)
+                    .timeout(5, TimeUnit.SECONDS)
+                    .send();
+                assertEquals(HttpStatus.OK_200, response.getStatus());
+            }
+            assertTrue(proxyAuthorizations.isEmpty(), proxyAuthorizations.toString());
+        }
+        finally
+        {
+            httpClient.stop();
+        }
     }
 
     private void testProxyAuthentication(SslContextFactory.Server proxyTLS, ConnectHandler connectHandler, String realm) throws Exception
