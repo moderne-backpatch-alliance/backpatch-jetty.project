@@ -26,8 +26,11 @@ import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.BasicAuthentication;
 import org.eclipse.jetty.client.util.DigestAuthentication;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class HttpAuthenticationStoreTest
 {
@@ -52,6 +55,73 @@ public class HttpAuthenticationStoreTest
         store.addAuthentication(new DigestAuthentication(uri1, realm, "user", "password"));
         result = store.findAuthentication("Digest", uri2, realm);
         assertNotNull(result);
+    }
+
+    @ParameterizedTest
+    @CsvSource(useHeadersInDisplayName = true, value = {
+        "registered,            requested,                matches",
+        "http://host,           http://host/any,          true",
+        "http://host/,          http://host/any,          true",
+        "http://host/,          http://HOST/any,          true",
+        "http://host/,          http://host:80/any,       true",
+        "http://host/ctx/,      http://host/ctx/,         true",
+        "http://host/ctx/,      http://host/ctx,          true",
+        "http://host/ctx,       http://host/ctx,          true",
+        "http://host/ctx,       http://host/ctx/,         true",
+        "http://host/ctx,       http://host/ctx/;j=1,     true",
+        "http://host/ctx,       http://host/ctx?q=1,      true",
+        "http://host/ctx,       http://host/ctx/?q=1,     true",
+        "http://host/ctx,       http://host/ctx/path,     true",
+        "http://host/ctx,       http://host/ctx//path,    true",
+        "http://host/ctx,       http://host/c/../ctx/p,   true",
+        "http://host/ctx,       http://host/ctx/p/../s,   true",
+        "http://host/ctx,       http://host/ctx/./path,   true",
+        "http://host/ctx/~user, http://host/ctx/~user,    true",
+        "http://host/ctx/~user, http://host/ctx/%7Euser,  true",
+        "http://host/ctx%2Fp,   http://host/ctx%2fp,      true",
+        "http://host/ctx%2Fp,   http://host/ctx/p,        false",
+        "http://host/ctx,       http://host/ctx2,         false",
+        "http://host/ctx/,      http://host/ctx2,         false",
+        "http://host/ctx,       http://host/ctx2/path,    false",
+        "http://host/ctx,       http://host/c,            false",
+        "http://host/ctx,       http://host/CTX,          false",
+        "http://host/ctx,       http://host/ctx%2Fpath,   false",
+        "http://host/ctx,       http://host/ctx/..,       false",
+        "http://host/ctx,       http://host/ctx/../path,  false",
+        "http://host/ctx,       http://host/ctx/..;/path, false",
+        "http://host/ctx/path,  http://host/ctx,          false",
+        "http://host/ctx/path,  http://host/ctx/,         false"
+    })
+    public void testFindAuthenticationWithURI(String registered, String requested, boolean matches)
+    {
+        AuthenticationStore store = new HttpAuthenticationStore();
+
+        URI uri1 = URI.create(registered);
+        String realm = "realm";
+        store.addAuthentication(new BasicAuthentication(uri1, realm, "user", "password"));
+
+        URI uri2 = URI.create(requested);
+        Authentication result = store.findAuthentication("Basic", uri2, realm);
+        if (matches)
+            assertNotNull(result);
+        else
+            assertNull(result);
+
+        store.clearAuthentications();
+    }
+
+    @ParameterizedTest
+    @CsvSource(useHeadersInDisplayName = true, value = {
+        "registered,            requested,                matches",
+        "http://host/ctx!a,     http://host/ctx%21a,      true",
+        "http://host/ctx%40a,   http://host/ctx@a,        true",
+        "http://host/ctx%24a,   http://host/ctx$a,        true",
+        "http://host/ctx,       http://host/ctx/%2e%2e/x, false",
+        "http://host/caf%C3%A9, http://host/café,         false"
+    })
+    public void testFindAuthenticationWithEncodedSafeCharacters(String registered, String requested, boolean matches)
+    {
+        testFindAuthenticationWithURI(registered, requested, matches);
     }
 
     @Test
