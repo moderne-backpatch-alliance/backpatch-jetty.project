@@ -59,10 +59,11 @@ public enum HttpCompliance // TODO in Jetty-10 convert this enum to a class so t
      * {@link HttpComplianceSection#FIELD_COLON},
      * {@link HttpComplianceSection#TRANSFER_ENCODING_WITH_CONTENT_LENGTH},
      * {@link HttpComplianceSection#MULTIPLE_CONTENT_LENGTHS},
+     * {@link HttpComplianceSection#LF_CHUNK_TERMINATION},
      * {@link HttpComplianceSection#NO_AMBIGUOUS_PATH_SEGMENTS} and
      * {@link HttpComplianceSection#NO_AMBIGUOUS_PATH_SEPARATORS}.
      */
-    RFC2616_LEGACY(sectionsBySpec("RFC2616,-FIELD_COLON,-METHOD_CASE_SENSITIVE,-TRANSFER_ENCODING_WITH_CONTENT_LENGTH,-MULTIPLE_CONTENT_LENGTHS")),
+    RFC2616_LEGACY(sectionsBySpec("RFC2616,-FIELD_COLON,-METHOD_CASE_SENSITIVE,-TRANSFER_ENCODING_WITH_CONTENT_LENGTH,-MULTIPLE_CONTENT_LENGTHS,-LF_CHUNK_TERMINATION")),
 
     /**
      * The strict RFC2616 support mode

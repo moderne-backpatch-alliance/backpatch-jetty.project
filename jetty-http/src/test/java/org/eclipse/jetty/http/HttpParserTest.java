@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -1094,7 +1095,7 @@ public class HttpParserTest
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"1\r\nX\r\n0\r\n\r\n", "1\r\nX\n0\r\n\r\n", "2;ext\r\nXY\r\n0\r\n\r\n"})
+    @ValueSource(strings = {"1\r\nX\r\n0\r\n\r\n", "2;ext\r\nXY\r\n0\r\n\r\n"})
     public void testChunkDataWithLineTerminator(String chunked)
     {
         ByteBuffer buffer = BufferUtil.toBuffer(
@@ -1108,6 +1109,101 @@ public class HttpParserTest
 
         assertFalse(_early);
         assertTrue(_messageCompleted);
+    }
+
+    private static final String[] LF_CHUNK_LINES = {
+        "1\nX\r\n0\r\n\r\n",
+        "1;ext\nX\r\n0\r\n\r\n",
+        "1;ext=v\nX\r\n0\r\n\r\n",
+        "1;ext=\"v\"\nX\r\n0\r\n\r\n",
+        "1\r\nX\n0\r\n\r\n",
+        "1\r\nX\r\n0\n\r\n",
+        "1\r\nX\r\n0\r\n\n",
+        "1\r\nX\r\n0\r\nTrailer: x\n\r\n",
+        "\n1\r\nX\r\n0\r\n\r\n",
+    };
+
+    private void parseChunked(HttpCompliance compliance, String chunked)
+    {
+        init();
+        ByteBuffer buffer = BufferUtil.toBuffer(
+            "POST /chunk HTTP/1.1\r\n" +
+                "Host: localhost\r\n" +
+                "Transfer-Encoding: chunked\r\n" +
+                "\r\n" +
+                chunked);
+        HttpParser.RequestHandler handler = new Handler();
+        HttpParser parser = new HttpParser(handler, compliance);
+        parseAll(parser, buffer);
+    }
+
+    @Test
+    public void testChunkLinesNeedCRLF()
+    {
+        for (String chunked : LF_CHUNK_LINES)
+        {
+            parseChunked(HttpCompliance.RFC7230, chunked);
+            assertTrue(_early, chunked);
+            assertFalse(_messageCompleted, chunked);
+        }
+
+        parseChunked(HttpCompliance.RFC7230, "1\r\nX\r\n0\r\n\r\n");
+        assertNull(_bad);
+        assertFalse(_early);
+        assertEquals("X", _content);
+        assertTrue(_messageCompleted);
+    }
+
+    @Test
+    public void testChunkCRLFSplitAcrossBuffers()
+    {
+        String request = "POST /chunk HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n" +
+            "1;a=b\r\nX\r\n0\r\n\r\n";
+        for (int split = request.indexOf("\r\n\r\n") + 5; split < request.length(); split++)
+        {
+            if (request.charAt(split - 1) != '\r')
+                continue;
+            init();
+            HttpParser.RequestHandler handler = new Handler();
+            HttpParser parser = new HttpParser(handler);
+            parser.parseNext(BufferUtil.toBuffer(request.substring(0, split)));
+            ByteBuffer rest = BufferUtil.toBuffer(request.substring(split));
+            for (int n = 0; n < 100 && rest.hasRemaining() && !_messageCompleted && _bad == null && !_early; n++)
+            {
+                parser.parseNext(rest);
+            }
+            assertNull(_bad, "split " + split);
+            assertFalse(_early, "split " + split);
+            assertEquals("X", _content, "split " + split);
+            assertTrue(_messageCompleted, "split " + split);
+        }
+    }
+
+    @Test
+    public void testLFChunkTerminationAllowedOnlyByRFC2616LegacyCompliance()
+    {
+        String chunked = "3D;!\n" + String.join("", Collections.nCopies(0x3D, "X")) + "\r\n0\r\n\r\n";
+        for (HttpCompliance compliance : new HttpCompliance[]{HttpCompliance.RFC7230, HttpCompliance.RFC7230_LEGACY, HttpCompliance.RFC7230_NO_AMBIGUOUS_URIS, HttpCompliance.RFC2616})
+        {
+            parseChunked(compliance, chunked);
+            assertTrue(_early, compliance.name());
+            assertFalse(_messageCompleted, compliance.name());
+        }
+
+        parseChunked(HttpCompliance.RFC2616_LEGACY, chunked);
+        assertNull(_bad);
+        assertFalse(_early);
+        assertTrue(_messageCompleted);
+        assertThat(_complianceViolation, contains(HttpComplianceSection.LF_CHUNK_TERMINATION));
+
+        for (String lines : LF_CHUNK_LINES)
+        {
+            parseChunked(HttpCompliance.RFC2616_LEGACY, lines);
+            assertNull(_bad, lines);
+            assertFalse(_early, lines);
+            assertEquals("X", _content, lines);
+            assertTrue(_messageCompleted, lines);
+        }
     }
 
     @Test
@@ -2921,6 +3017,7 @@ public class HttpParserTest
         _headerCompleted = false;
         _contentCompleted = false;
         _messageCompleted = false;
+        _early = false;
         _complianceViolation.clear();
     }
 

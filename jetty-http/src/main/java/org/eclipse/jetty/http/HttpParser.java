@@ -514,6 +514,15 @@ public class HttpParser
         return t;
     }
 
+    // Chunk framing and trailer lines end in CRLF (RFC 7230 4.1); a bare LF there is allowed only by LF_CHUNK_TERMINATION.
+    private HttpTokens.Token nextChunkToken(ByteBuffer buffer)
+    {
+        if (!_cr && buffer.get(buffer.position()) == HttpTokens.LINE_FEED &&
+            complianceViolation(HttpComplianceSection.LF_CHUNK_TERMINATION))
+            throw new BadMessageException("Bad EOL");
+        return next(buffer);
+    }
+
     /* Quick lookahead for the start state looking for a request method or an HTTP version,
      * otherwise skip white space until something else to parse.
      */
@@ -1147,7 +1156,7 @@ public class HttpParser
         while ((_state == State.HEADER || _state == State.TRAILER) && buffer.hasRemaining())
         {
             // process each character
-            HttpTokens.Token t = next(buffer);
+            HttpTokens.Token t = _state == State.TRAILER ? nextChunkToken(buffer) : next(buffer);
             if (t == null)
                 break;
 
@@ -1746,7 +1755,7 @@ public class HttpParser
 
                 case CHUNKED_CONTENT:
                 {
-                    HttpTokens.Token t = next(buffer);
+                    HttpTokens.Token t = nextChunkToken(buffer);
                     if (t == null)
                         break;
                     switch (t.getType())
@@ -1781,7 +1790,7 @@ public class HttpParser
 
                 case CHUNK_SIZE:
                 {
-                    HttpTokens.Token t = next(buffer);
+                    HttpTokens.Token t = nextChunkToken(buffer);
                     if (t == null)
                         break;
 
@@ -1827,10 +1836,10 @@ public class HttpParser
                     // CVE-2026-2332: RFC 9110/9112-strict chunk-extension parsing, ported from
                     // jetty-12 ff9eb742. A quoted-string value must be well-formed — a raw
                     // CR/LF/control inside an open quote is rejected rather than silently
-                    // terminating the extension (the request-smuggling desync vector). LF stays
-                    // tolerated as a chunk terminator in the non-quote states to preserve the
-                    // pre-existing 9.4.x acceptance of empty/whitespace extensions (e.g. "a;\r\n").
-                    HttpTokens.Token t = next(buffer);
+                    // terminating the extension (the request-smuggling desync vector). LF ends the
+                    // extension in the non-quote states, which keeps the pre-existing 9.4.x acceptance
+                    // of empty/whitespace extensions (e.g. "a;\r\n"); nextChunkToken decides on a bare LF.
+                    HttpTokens.Token t = nextChunkToken(buffer);
                     if (t == null)
                         break;
 

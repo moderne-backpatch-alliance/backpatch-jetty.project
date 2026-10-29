@@ -38,7 +38,8 @@ public enum HttpComplianceSection
     NO_UTF16_ENCODINGS("https://www.w3.org/International/iri-edit/draft-duerst-iri.html#anchor29", "UTF16 encoding"),
     NO_USER_INFO("https://datatracker.ietf.org/doc/html/rfc9110#name-deprecation-of-userinfo-in-", "User info in authority"),
     NO_AMBIGUOUS_EMPTY_SEGMENT("https://tools.ietf.org/html/rfc3986#section-3.3", "Ambiguous URI empty segment"),
-    NO_AMBIGUOUS_PATH_ENCODING("https://tools.ietf.org/html/rfc3986#section-3.3", "Ambiguous URI path encoding");
+    NO_AMBIGUOUS_PATH_ENCODING("https://tools.ietf.org/html/rfc3986#section-3.3", "Ambiguous URI path encoding"),
+    LF_CHUNK_TERMINATION("https://tools.ietf.org/html/rfc7230#section-4.1", "LF line terminator in chunk");
 
     final String url;
     final String description;
