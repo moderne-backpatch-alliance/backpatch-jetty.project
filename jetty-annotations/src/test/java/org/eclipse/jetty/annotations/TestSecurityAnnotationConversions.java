@@ -276,6 +276,54 @@ public class TestSecurityAnnotationConversions
         compareResults(expectedMappings, ((ConstraintAware)wac.getSecurityHandler()).getConstraintMappings());
     }
 
+    @ServletSecurity(@HttpConstraint(value = EmptyRoleSemantic.DENY))
+    public static class EmptyDenyServlet extends HttpServlet
+    {
+    }
+
+    @Test
+    public void testWebXmlPathSpecAuthoritative()
+    {
+        // A ServletSecurity annotation that has HttpConstraint of EmptyRoleSemantic.DENY
+        WebAppContext wac = makeWebAppContext(EmptyDenyServlet.class.getCanonicalName(), "emptyDenyServlet", new String[]{
+            "/annotation/*", "/descriptor/*"
+        });
+
+        AnnotationIntrospector introspector = new AnnotationIntrospector();
+        ServletSecurityAnnotationHandler annotationHandler = new ServletSecurityAnnotationHandler(wac);
+        introspector.registerHandler(annotationHandler);
+
+        // Add another constraint, overriding the existing one on the same path spec
+        // This should be the Jakarta Servlet Spec 13.4.1 authoritative constraint.
+        Constraint descriptorConstraint = new Constraint();
+        descriptorConstraint.setAuthenticate(true);
+        descriptorConstraint.setDataConstraint(Constraint.DC_NONE);
+        ConstraintMapping descriptorMapping = new ConstraintMapping();
+        descriptorMapping.setPathSpec("/descriptor/*");
+        descriptorMapping.setConstraint(descriptorConstraint);
+
+        ConstraintAware constraintSecurityHandler = (ConstraintAware)wac.getSecurityHandler();
+        constraintSecurityHandler.addConstraintMapping(descriptorMapping);
+
+        Constraint expectedDescriptorConstraint = new Constraint();
+        expectedDescriptorConstraint.setAuthenticate(true);
+        expectedDescriptorConstraint.setDataConstraint(Constraint.DC_NONE);
+        Constraint expectedAnnotationConstraint = new Constraint();
+        expectedAnnotationConstraint.setAuthenticate(true);
+        expectedAnnotationConstraint.setDataConstraint(Constraint.DC_NONE);
+
+        ConstraintMapping[] expectedMappings = new ConstraintMapping[2];
+        expectedMappings[0] = new ConstraintMapping();
+        expectedMappings[0].setConstraint(expectedDescriptorConstraint);
+        expectedMappings[0].setPathSpec("/descriptor/*");
+        expectedMappings[1] = new ConstraintMapping();
+        expectedMappings[1].setConstraint(expectedAnnotationConstraint);
+        expectedMappings[1].setPathSpec("/annotation/*");
+
+        introspector.introspect(EmptyDenyServlet.class);
+        compareResults(expectedMappings, constraintSecurityHandler.getConstraintMappings());
+    }
+
     private void compareResults(ConstraintMapping[] expectedMappings, List<ConstraintMapping> actualMappings)
     {
         assertNotNull(actualMappings);

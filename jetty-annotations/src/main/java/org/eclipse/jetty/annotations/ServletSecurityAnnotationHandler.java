@@ -20,6 +20,8 @@ package org.eclipse.jetty.annotations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.ServletSecurityElement;
 import javax.servlet.annotation.ServletSecurity;
 import javax.servlet.annotation.ServletSecurity.EmptyRoleSemantic;
@@ -31,6 +33,7 @@ import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlet.ServletMapping;
+import org.eclipse.jetty.util.StringUtil;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
 import org.eclipse.jetty.util.security.Constraint;
@@ -81,38 +84,38 @@ public class ServletSecurityAnnotationHandler extends AbstractIntrospectableAnno
         if (servletSecurity == null)
             return;
 
-        //If there are already constraints defined (ie from web.xml) that match any
-        //of the url patterns defined for this servlet, then skip the security annotation.
-
         List<ServletMapping> servletMappings = getServletMappings(clazz.getCanonicalName());
-        List<ConstraintMapping> constraintMappings = ((ConstraintAware)_context.getSecurityHandler()).getConstraintMappings();
+        ConstraintAware securityHandler = (ConstraintAware)_context.getSecurityHandler();
 
-        if (constraintsExist(servletMappings, constraintMappings))
-        {
-            LOG.warn("Constraints already defined for " + clazz.getName() + ", skipping ServletSecurity annotation");
-            return;
-        }
+        Set<String> existingConstraintMappingPathSpecs = securityHandler.getConstraintMappings()
+            .stream()
+            .map(ConstraintMapping::getPathSpec)
+            .filter(StringUtil::isNotBlank)
+            .collect(Collectors.toSet());
 
-        //Make a fresh list
-        constraintMappings = new ArrayList<ConstraintMapping>();
+        List<ConstraintMapping> constraintMappings = new ArrayList<>();
 
         ServletSecurityElement securityElement = new ServletSecurityElement(servletSecurity);
         for (ServletMapping sm : servletMappings)
         {
-            for (String url : sm.getPathSpecs())
+            for (String pathSpec : sm.getPathSpecs())
             {
-                _context.getMetaData().setOrigin("constraint.url." + url, servletSecurity, clazz);
-                constraintMappings.addAll(ConstraintSecurityHandler.createConstraintsWithMappingsForPath(clazz.getName(), url, securityElement));
+                // Per Jakarta Servlet Spec 13.4.1: @ServletSecurity
+                // The security-constraint elements defined in web.xml are authoritative for all exact match url-patterns.
+                // https://jakarta.ee/specifications/servlet/5.0/jakarta-servlet-spec-5.0#servletsecurity-annotation
+                // Note: for ee8 conversion, the rules here still apply on Jakarta Servlet 4.0 / EE8
+                if (existingConstraintMappingPathSpecs.contains(pathSpec))
+                {
+                    LOG.warn("Constraint Mapping already defined for {} on path-spec {}, skipping ServletSecurity annotation", clazz.getName(), pathSpec);
+                    continue; // skip
+                }
+                _context.getMetaData().setOrigin("constraint.url." + pathSpec, servletSecurity, clazz);
+                constraintMappings.addAll(ConstraintSecurityHandler.createConstraintsWithMappingsForPath(clazz.getName(), pathSpec, securityElement));
             }
         }
 
         //set up the security constraints produced by the annotation
-        ConstraintAware securityHandler = (ConstraintAware)_context.getSecurityHandler();
-
-        for (ConstraintMapping m : constraintMappings)
-        {
-            securityHandler.addConstraintMapping(m);
-        }
+        constraintMappings.forEach(securityHandler::addConstraintMapping);
 
         //Servlet Spec 3.1 requires paths with uncovered http methods to be reported
         securityHandler.checkPathsWithUncoveredHttpMethods();
@@ -160,7 +163,9 @@ public class ServletSecurityAnnotationHandler extends AbstractIntrospectableAnno
      * @param servletMappings the servlet mappings
      * @param constraintMappings the constraint mappings
      * @return true if constraint exists
+     * @deprecated not used, no replacement
      */
+    @Deprecated
     protected boolean constraintsExist(List<ServletMapping> servletMappings, List<ConstraintMapping> constraintMappings)
     {
         boolean exists = false;
