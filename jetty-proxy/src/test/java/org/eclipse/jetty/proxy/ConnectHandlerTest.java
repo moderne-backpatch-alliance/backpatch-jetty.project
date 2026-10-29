@@ -206,6 +206,31 @@ public class ConnectHandlerTest extends AbstractConnectHandlerTest
     }
 
     @Test
+    public void testProxyBlackListIgnoresHostCase() throws Exception
+    {
+        int port = serverConnector.getLocalPort();
+        connectHandler.getBlackListHosts().add("localhost:" + port);
+
+        String hostPort = "LOCALHOST:" + port;
+        String request =
+            "CONNECT " + hostPort + " HTTP/1.1\r\n" +
+                "Host: " + hostPort + "\r\n" +
+                "\r\n";
+        try (Socket socket = newSocket())
+        {
+            OutputStream output = socket.getOutputStream();
+            InputStream input = socket.getInputStream();
+
+            output.write(request.getBytes(StandardCharsets.UTF_8));
+            output.flush();
+
+            HttpTester.Input in = HttpTester.from(input);
+            HttpTester.Response response = HttpTester.parseResponse(in);
+            assertEquals(HttpStatus.FORBIDDEN_403, response.getStatus());
+        }
+    }
+
+    @Test
     public void testProxyBlackList() throws Exception
     {
         int port = serverConnector.getLocalPort();

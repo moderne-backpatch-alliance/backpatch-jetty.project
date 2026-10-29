@@ -688,6 +688,28 @@ public class ProxyServletTest
 
     @ParameterizedTest
     @MethodSource("impls")
+    public void testProxyHostListsIgnoreHostCase(Class<? extends ProxyServlet> proxyServletClass) throws Exception
+    {
+        startServer(new EmptyHttpServlet());
+        startProxy(proxyServletClass);
+        startClient();
+        int port = serverConnector.getLocalPort();
+        proxyServlet.getWhiteListHosts().add("LOCALHOST:" + port);
+
+        ContentResponse response = client.newRequest("localhost", port)
+            .timeout(5, TimeUnit.SECONDS)
+            .send();
+        assertEquals(200, response.getStatus());
+
+        proxyServlet.getBlackListHosts().add("LocalHost:" + port);
+        response = client.newRequest("localhost", port)
+            .timeout(5, TimeUnit.SECONDS)
+            .send();
+        assertEquals(403, response.getStatus());
+    }
+
+    @ParameterizedTest
+    @MethodSource("impls")
     public void testProxyBlackList(Class<? extends ProxyServlet> proxyServletClass) throws Exception
     {
         startServer(new EmptyHttpServlet());

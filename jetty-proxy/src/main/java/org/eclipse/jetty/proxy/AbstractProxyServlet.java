@@ -104,8 +104,8 @@ public abstract class AbstractProxyServlet extends HttpServlet
         HOP_HEADERS = Collections.unmodifiableSet(hopHeaders);
     }
 
-    private final Set<String> _whiteList = new HashSet<>();
-    private final Set<String> _blackList = new HashSet<>();
+    private final Set<String> _whiteList = new AsciiLowerCaseSet();
+    private final Set<String> _blackList = new AsciiLowerCaseSet();
     protected Logger _log;
     private boolean _preserveHost;
     private String _hostHeader;

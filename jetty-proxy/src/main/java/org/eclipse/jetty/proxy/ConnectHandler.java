@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,8 +64,8 @@ public class ConnectHandler extends HandlerWrapper
 {
     protected static final Logger LOG = Log.getLogger(ConnectHandler.class);
 
-    private final Set<String> whiteList = new HashSet<>();
-    private final Set<String> blackList = new HashSet<>();
+    private final Set<String> whiteList = new AsciiLowerCaseSet();
+    private final Set<String> blackList = new AsciiLowerCaseSet();
     private Executor executor;
     private Scheduler scheduler;
     private ByteBufferPool bufferPool;
