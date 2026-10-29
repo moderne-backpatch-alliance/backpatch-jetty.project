@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.4.58.v20250814-backpatch-00009
+release: 9.4.58.v20250814-backpatch-00010
 baseline: v9.4.58.v20250814+backpatch.baseline
 fixes:
   - cve: CVE-2026-2332
@@ -78,12 +78,20 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-client
-    note: New in this release; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00009 (backpatch-jetty.project@879c55f).
+    note: Carried from 9.4.58.v20250814-backpatch-00009; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00009 (backpatch-jetty.project@879c55f).
+  - cve: CVE-2026-18660
+    upstream_fix_url: https://github.com/jetty/jetty.project/pull/15550
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-18660
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/1c09d39
+    basis: adapted
+    artifacts:
+      - org.eclipse.jetty:jetty-proxy
+    note: New in this release; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00010 (backpatch-jetty.project@1c09d39).
 tests:
-  commit: 879c55f61f94922396cdb7ea77d27fcf90d6dd8e
+  commit: 1c09d39e5343ffbba789431cfa0985157cb3abf6
   command: mvn -B -o -Dmaven.buildNumber.skip=true -pl jetty-util,jetty-jmx,jetty-io,jetty-http,jetty-xml,jetty-util-ajax,jetty-server,jetty-servlet,jetty-client,jetty-proxy,tests/test-integration,jetty-annotations,jetty-http2/http2-hpack,jetty-http2/http2-common,jetty-http2/http2-server,jetty-http2/http2-client,jetty-http2/http2-http-client-transport -am install -DskipTests -Dsurefire.rerunFailingTestsCount=3, then mvn -B -o -Dmaven.buildNumber.skip=true -pl jetty-util,jetty-jmx,jetty-io,jetty-http,jetty-xml,jetty-util-ajax,jetty-server,jetty-servlet,jetty-client,jetty-proxy,tests/test-integration,jetty-annotations,jetty-http2/http2-hpack,jetty-http2/http2-common,jetty-http2/http2-server,jetty-http2/http2-client,jetty-http2/http2-http-client-transport test -Dmaven.test.failure.ignore=true -Dsurefire.rerunFailingTestsCount=3
   runtime: OpenJDK 17.0.16 (Zulu 17.60+17, linux-aarch64), Apache Maven 3.9.16, Debian bookworm container, en_US.UTF-8
-  report: jetty-http-9.4.58.v20250814-backpatch-00009-tests.zip
-  report_sha256: 8d96d976b7bb08e5acc98ca95ea88e77a9c7c4e05ad1d8f25ab4322b41c95037
+  report: jetty-http-9.4.58.v20250814-backpatch-00010-tests.zip
+  report_sha256: b4d90bd6e2697662d3ccaf88e51a13f6ab8350ca8b6f6941beaebd0af6eac30d
   result: pass
-  note: the full jetty-9.4 suite (jetty-annotations 30, jetty-client 644, jetty-http 1473, http2-client 150, http2-common 43, http2-hpack 48, http2-http-client-transport 53, http2-server 22, jetty-io 99, jetty-jmx 53, jetty-proxy 235, jetty-server 2445, jetty-servlet 525, jetty-util 1710, jetty-util-ajax 89, jetty-xml 116, test-integration 1084 tests run), 0 failed, 0 errors, 245 skipped, at the tested commit, in a Linux container; jetty-util PathWatcherTest#testDeployFilesNewDir failed 1 time and passed on a later attempt (1 flakyFailure entry in its report)
+  note: the full jetty-9.4 suite (jetty-annotations 30, jetty-client 644, jetty-http 1473, http2-client 150, http2-common 43, http2-hpack 48, http2-http-client-transport 53, http2-server 22, jetty-io 99, jetty-jmx 53, jetty-proxy 239, jetty-server 2445, jetty-servlet 525, jetty-util 1710, jetty-util-ajax 89, jetty-xml 116, test-integration 1084 tests run), 0 failed, 0 errors, 245 skipped, at the tested commit, in a Linux container
