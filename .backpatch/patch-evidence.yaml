@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.2.30.v20200428-backpatch-00011
+release: 9.2.30.v20200428-backpatch-00012
 baseline: v9.2.30.v20200428+backpatch.baseline
 fixes:
   - cve: CVE-2021-28165
@@ -92,12 +92,11 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty:jetty-security
-    note: New in this release; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00011 (backpatch-jetty.project@4166e0b).
+    note: Carried from 9.2.30.v20200428-backpatch-00011; ported onto 9.2.30.v20200428; fixed at 9.2.30.v20200428-backpatch-00011 (backpatch-jetty.project@4166e0b).
 tests:
-  commit: 4166e0b2e5cdffc3f9ea4b25ed0c18b4887b2c8d
-  command: JAVA_HOME=<jdk-7> /bin/bash <alliance>/work/wave2/items/scripts/jetty-9.2.30.sh suite <m2> "" -pl jetty-security
-  runtime: Azul Zulu (Java 1.7.0_76), Apache Maven 3.6.3, macOS x86_64 under Rosetta 2
-  report: jetty-security-9.2.30.v20200428-backpatch-00011-tests.zip
-  report_sha256: 5024efc84f1190b37e0ac9f00c014a84d9c32c31e54bc75ca5bff7d2aa8908a9
+  commit: 9f781bfc742f30ace3d2fa65b51a663768e5284b
+  command: none in this repository
+  runtime: none, no build or test ran for this release
+  report: carried, see the evidence of the release named in the note
   result: pass
-  note: the full suite at the tested commit (jetty-util, jetty-http, jetty-io, jetty-server and jetty-security), 2146 tests run, 0 failed, 25 skipped; an earlier full run at the same commit had one error, ExtendedServerTest#testFullURI with "Connection reset", which also failed once at the baseline and passed in this run; the regression tests for CVE-2026-10050 are DigestCharsetCollisionTest
+  note: "this release is a tooling update, it carries no new fix, nothing ran here; its test provenance is tooling-2026-11-03-jetty-9.2: a tooling update of moderne-backpatch-alliance/backpatch-jetty.project at v9.2.30.v20200428-backpatch-00011, whose .backpatch/patch-evidence.yaml says what ran"
