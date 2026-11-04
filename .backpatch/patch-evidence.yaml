@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.4.58.v20250814-backpatch-00012
+release: 9.4.58.v20250814-backpatch-00013
 baseline: v9.4.58.v20250814+backpatch.baseline
 fixes:
   - cve: CVE-2026-2332
@@ -102,12 +102,11 @@ fixes:
     basis: adapted
     artifacts:
       - org.eclipse.jetty.http2:http2-common
-    note: New in this release; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00012 (backpatch-jetty.project@7abc7b8).
+    note: Carried from 9.4.58.v20250814-backpatch-00012; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00012 (backpatch-jetty.project@7abc7b8).
 tests:
-  commit: 7abc7b830920c9a53b7c4fecb887b345dbc314ea
-  command: mvn -B -o -Dmaven.buildNumber.skip=true -pl jetty-util,jetty-jmx,jetty-io,jetty-http,jetty-xml,jetty-util-ajax,jetty-server,jetty-servlet,jetty-client,jetty-proxy,tests/test-integration,jetty-annotations,jetty-http2/http2-hpack,jetty-http2/http2-common,jetty-http2/http2-server,jetty-http2/http2-client,jetty-http2/http2-http-client-transport -am install -DskipTests -Dsurefire.rerunFailingTestsCount=3, then mvn -B -o -Dmaven.buildNumber.skip=true -pl jetty-util,jetty-jmx,jetty-io,jetty-http,jetty-xml,jetty-util-ajax,jetty-server,jetty-servlet,jetty-client,jetty-proxy,tests/test-integration,jetty-annotations,jetty-http2/http2-hpack,jetty-http2/http2-common,jetty-http2/http2-server,jetty-http2/http2-client,jetty-http2/http2-http-client-transport test -Dmaven.test.failure.ignore=true -Dsurefire.rerunFailingTestsCount=3
-  runtime: OpenJDK 17.0.16 (Zulu 17.60+17, linux-aarch64), Apache Maven 3.9.16, Debian bookworm container, en_US.UTF-8
-  report: jetty-http-9.4.58.v20250814-backpatch-00012-tests.zip
-  report_sha256: b892ce2b136e36379b53c0bf2cf0e0b99421b9cb975db9b304f0692af640c302
+  commit: c61e70767f4af4e26f9f6dcd7023d32bc605237b
+  command: none in this repository
+  runtime: none, no build or test ran for this release
+  report: carried, see the evidence of the release named in the note
   result: pass
-  note: the full jetty-9.4 suite (jetty-annotations 31, jetty-client 644, jetty-http 1473, http2-client 150, http2-common 44, http2-hpack 48, http2-http-client-transport 53, http2-server 22, jetty-io 99, jetty-jmx 53, jetty-proxy 239, jetty-server 2445, jetty-servlet 525, jetty-util 1710, jetty-util-ajax 89, jetty-xml 116, test-integration 1084 tests run), 0 failed, 0 errors, 245 skipped, at the tested commit, in a Linux container; jetty-util PathWatcherTest#testDeployFilesNewDir failed 1 time and passed on a later attempt (1 flakyFailure entry in its report)
+  note: "this release is a tooling update, it carries no new fix, nothing ran here; its test provenance is tooling-2026-11-03-jetty-9.4: a tooling update of moderne-backpatch-alliance/backpatch-jetty.project at v9.4.58.v20250814-backpatch-00012, whose .backpatch/patch-evidence.yaml says what ran"
