@@ -23,6 +23,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpParser;
 import org.eclipse.jetty.server.LocalConnector.LocalEndPoint;
@@ -53,6 +54,7 @@ public class PartialRFC2616Test
         server = new Server();
         connector = new LocalConnector(server);
         connector.setIdleTimeout(10000);
+        connector.getConnectionFactory(HttpConnectionFactory.class).setHttpCompliance(HttpCompliance.RFC2616);
         server.addConnector(connector);
 
         ContextHandler vcontext = new ContextHandler();

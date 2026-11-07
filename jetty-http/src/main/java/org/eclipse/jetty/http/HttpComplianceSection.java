@@ -39,7 +39,8 @@ public enum HttpComplianceSection
     NO_USER_INFO("https://datatracker.ietf.org/doc/html/rfc9110#name-deprecation-of-userinfo-in-", "User info in authority"),
     NO_AMBIGUOUS_EMPTY_SEGMENT("https://tools.ietf.org/html/rfc3986#section-3.3", "Ambiguous URI empty segment"),
     NO_AMBIGUOUS_PATH_ENCODING("https://tools.ietf.org/html/rfc3986#section-3.3", "Ambiguous URI path encoding"),
-    LF_CHUNK_TERMINATION("https://tools.ietf.org/html/rfc7230#section-4.1", "LF line terminator in chunk");
+    LF_CHUNK_TERMINATION("https://tools.ietf.org/html/rfc7230#section-4.1", "LF line terminator in chunk"),
+    NO_MISMATCHED_AUTHORITY("https://www.rfc-editor.org/rfc/rfc7230#section-5.4", "Mismatched Authority");
 
     final String url;
     final String description;

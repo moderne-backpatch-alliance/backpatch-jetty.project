@@ -28,6 +28,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http.HttpTester;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.jupiter.api.AfterEach;
@@ -73,6 +74,7 @@ public class ForwardedRequestCustomizerTest
 
         // Default behavior Connector
         HttpConnectionFactory http = new HttpConnectionFactory();
+        http.setHttpCompliance(HttpCompliance.RFC2616);
         http.getHttpConfiguration().setSecurePort(443);
         customizer = new ForwardedRequestCustomizer();
         http.getHttpConfiguration().addCustomizer(customizer);
@@ -81,6 +83,7 @@ public class ForwardedRequestCustomizerTest
 
         // Alternate behavior Connector
         HttpConnectionFactory httpAlt = new HttpConnectionFactory();
+        httpAlt.setHttpCompliance(HttpCompliance.RFC2616);
         httpAlt.getHttpConfiguration().setSecurePort(8443);
         customizerAlt = new ForwardedRequestCustomizer();
         httpAlt.getHttpConfiguration().addCustomizer(customizerAlt);
@@ -89,6 +92,7 @@ public class ForwardedRequestCustomizerTest
 
         // Configured behavior Connector
         http = new HttpConnectionFactory();
+        http.setHttpCompliance(HttpCompliance.RFC2616);
         customizerConfigured = new ForwardedRequestCustomizer();
         customizerConfigured.setForwardedHeader("Jetty-Forwarded");
         customizerConfigured.setForwardedHostHeader("Jetty-Forwarded-Host");

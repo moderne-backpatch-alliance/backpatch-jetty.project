@@ -21,6 +21,7 @@ package org.eclipse.jetty.http.client;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
@@ -775,6 +776,29 @@ public class HttpClientTest extends AbstractTest<TransportScenario>
         });
 
         assertTrue(resultLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(TransportProvider.class)
+    public void testAuthorityHostMismatch(Transport transport) throws Exception
+    {
+        init(transport);
+        Assumptions.assumeTrue(transport != Transport.FCGI && transport != Transport.UNIX_SOCKET);
+        scenario.start(new EmptyServerHandler());
+
+        URI uri = URI.create(scenario.newURI());
+        String path = "/";
+        // For HTTP/1.1, use the absolute-form, otherwise the authority
+        // is derived from the Host header and the test will fail.
+        if (transport == Transport.HTTP || transport == Transport.HTTPS)
+            path = uri + "/";
+        ContentResponse response = scenario.client.newRequest(uri)
+            .path(path)
+            .header(HttpHeader.HOST, "127.0.0.1:" + uri.getPort())
+            .timeout(5, TimeUnit.SECONDS)
+            .send();
+
+        assertEquals(HttpStatus.BAD_REQUEST_400, response.getStatus());
     }
 
     private void sleep(long time) throws IOException

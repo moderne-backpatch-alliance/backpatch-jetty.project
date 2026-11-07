@@ -28,11 +28,14 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpParser;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.http.HttpTester;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.test.support.StringUtil;
 import org.eclipse.jetty.test.support.TestableJettyServer;
 import org.eclipse.jetty.test.support.rawhttp.HttpSocket;
@@ -100,6 +103,13 @@ public abstract class RFC2616BaseTest
 
         server = testableserver;
         server.load();
+        // RFC2616 mode, as upstream's RFC2616Base.xml; 9.4 keeps it on the connection factory NIOHttp(s).xml creates
+        for (Connector connector : server.getServer().getConnectors())
+        {
+            HttpConnectionFactory factory = connector.getConnectionFactory(HttpConnectionFactory.class);
+            if (factory != null)
+                factory.setHttpCompliance(HttpCompliance.RFC2616);
+        }
         server.start();
         //server.getServer().dumpStdErr();
     }

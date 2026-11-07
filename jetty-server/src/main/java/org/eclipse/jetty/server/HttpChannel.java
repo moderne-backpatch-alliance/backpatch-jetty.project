@@ -40,6 +40,8 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 
 import org.eclipse.jetty.http.BadMessageException;
+import org.eclipse.jetty.http.HttpCompliance;
+import org.eclipse.jetty.http.HttpComplianceSection;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpGenerator;
@@ -47,6 +49,7 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpHeaderValue;
 import org.eclipse.jetty.http.HttpScheme;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http.MetaData;
 import org.eclipse.jetty.io.ByteBufferPool;
@@ -484,6 +487,7 @@ public class HttpChannel implements Runnable, HttpOutput.Interceptor
                                 if (_request.isHandled())
                                     return;
                             }
+                            checkAuthority();
                             getServer().handle(HttpChannel.this);
                         });
 
@@ -752,6 +756,49 @@ public class HttpChannel implements Runnable, HttpOutput.Interceptor
      *
      * @param failure the Throwable that caused the problem
      */
+    private void checkAuthority()
+    {
+        Connection connection = getConnection();
+        HttpCompliance compliance = connection instanceof HttpConnection
+            ? ((HttpConnection)connection).getHttpCompliance()
+            : getConnector().getBean(HttpCompliance.class);
+        if (compliance != null && !compliance.sections().contains(HttpComplianceSection.NO_MISMATCHED_AUTHORITY))
+            return;
+
+        MetaData.Request metaData = _request.getMetaData();
+        if (!authorityMatches(metaData.getURI(), metaData.getFields().get(HttpHeader.HOST)))
+            throw new BadMessageException("Authority!=Host");
+    }
+
+    private static boolean authorityMatches(HttpURI uri, String host)
+    {
+        String authority = uri.getAuthority();
+        // Either both are null or only one is present.
+        if (authority == null || host == null)
+            return true;
+
+        // Both are present, must match.
+
+        // Direct hit, hosts must be compared ignoring case.
+        if (authority.equalsIgnoreCase(host))
+            return true;
+
+        // Handle default ports: example.com matches example.com:80.
+        String scheme = uri.getScheme();
+        int defaultPort = HttpScheme.HTTPS.is(scheme) || HttpScheme.WSS.is(scheme) ? 443
+            : HttpScheme.HTTP.is(scheme) || HttpScheme.WS.is(scheme) ? 80 : -1;
+        int uriPort = uri.getPort();
+        int effectiveURIPort = uriPort <= 0 ? defaultPort : uriPort;
+        HostPort hostPort = new HostPort(host);
+        int port = hostPort.getPort();
+        int effectiveHostPort = port <= 0 ? defaultPort : port;
+        if (effectiveURIPort != effectiveHostPort)
+            return false;
+
+        // Same effective port, compare hosts ignoring case.
+        return hostPort.getHost().equalsIgnoreCase(uri.getHost());
+    }
+
     protected void handleException(Throwable failure)
     {
         // Unwrap wrapping Jetty and Servlet exceptions.
