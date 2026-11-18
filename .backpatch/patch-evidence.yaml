@@ -1,6 +1,6 @@
 schema: osera-patch-evidence/0.1.0
 producer: moderne
-release: 9.4.58.v20250814-backpatch-00014
+release: 9.4.58.v20250814-backpatch-00015
 baseline: v9.4.58.v20250814+backpatch.baseline
 fixes:
   - cve: CVE-2026-2332
@@ -103,10 +103,21 @@ fixes:
     artifacts:
       - org.eclipse.jetty.http2:http2-common
     note: Carried from 9.4.58.v20250814-backpatch-00012; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00012 (backpatch-jetty.project@7abc7b8).
+  - cve: CVE-2026-6790
+    upstream_fix_url: https://github.com/advisories/GHSA-7p3p-8qv8-m2vh
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-6790
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-jetty.project/commit/550d593
+    basis: adapted
+    artifacts:
+      - org.eclipse.jetty:jetty-client
+      - org.eclipse.jetty:jetty-http
+      - org.eclipse.jetty:jetty-server
+    note: New in this release; ported onto 9.4.58.v20250814; fixed at 9.4.58.v20250814-backpatch-00015 (backpatch-jetty.project@550d593).
 tests:
-  commit: f8f2504681159bd00e0eeca7d9eaaf6e5bdcffee
-  command: none in this repository
-  runtime: none, no build or test ran for this release
-  report: carried, see the evidence of the release named in the note
+  commit: 550d593bcee5a0d75c65f363aff1dd6c5f7b4c8d
+  command: mvn -B -o -Dmaven.buildNumber.skip=true -pl jetty-util,jetty-jmx,jetty-io,jetty-http,jetty-xml,jetty-util-ajax,jetty-server,jetty-servlet,jetty-client,jetty-proxy,tests/test-integration,jetty-annotations,jetty-http2/http2-hpack,jetty-http2/http2-common,jetty-http2/http2-server,jetty-http2/http2-client,jetty-http2/http2-http-client-transport -am install -DskipTests -Dsurefire.rerunFailingTestsCount=3, then mvn -B -o -Dmaven.buildNumber.skip=true -pl jetty-util,jetty-jmx,jetty-io,jetty-http,jetty-xml,jetty-util-ajax,jetty-server,jetty-servlet,jetty-client,jetty-proxy,tests/test-integration,jetty-annotations,jetty-http2/http2-hpack,jetty-http2/http2-common,jetty-http2/http2-server,jetty-http2/http2-client,jetty-http2/http2-http-client-transport test -Dmaven.test.failure.ignore=true -Dsurefire.rerunFailingTestsCount=3
+  runtime: OpenJDK 17.0.16 (Zulu 17.60+17, linux-aarch64), Apache Maven 3.9.16, Ubuntu 24.04 on a Linux aarch64 devpod, en_US.UTF-8
+  report: jetty-http-9.4.58.v20250814-backpatch-00015-tests.zip
+  report_sha256: 65a95ff390886d0dfc6207bff4df4f3d414e62c9db8195dd80bd852676002a78
   result: pass
-  note: "this release is a tooling update, it carries no new fix, nothing ran here; its test provenance is tooling-2026-11-05-jetty-9.4: a tooling update of moderne-backpatch-alliance/backpatch-jetty.project at v9.4.58.v20250814-backpatch-00013, whose .backpatch/patch-evidence.yaml says what ran"
+  note: "the full jetty-9.4 suite (jetty-annotations 31, jetty-client 644, jetty-http 1473, http2-client 150, http2-common 44, http2-hpack 48, http2-http-client-transport 53, http2-server 22, jetty-io 99, jetty-jmx 53, jetty-proxy 239, jetty-server 2445, jetty-servlet 525, jetty-util 1710, jetty-util-ajax 89, jetty-xml 116, test-http-client-transport 921, test-integration 1084 tests run), 0 failed, 0 errors, 477 skipped, at the tested commit, in a Linux container; run natively on a Linux aarch64 devpod (Ubuntu 24.04) with the line's JDK, Maven and offline repository instead of the line's Debian container; 00014's tip ran there with the same commands as the comparison: 8825 tests, 0 failed, 0 errors; tests/test-http-client-transport, the module of the fix's HttpClientTest, ran after the suite with the same JDK, Maven and repository (-pl tests/test-http-client-transport -am install -DskipTests, then test): 921 tests, 0 failed, 0 errors (915 at 00014's tip)"
